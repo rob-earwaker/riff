@@ -29,10 +29,19 @@ class TestRiffChunk(unittest.TestCase):
         riff_chunk = riff.RiffChunk.from_stream(stream)
         self.assertEqual('MOCK', riff_chunk.format)
 
-    def test_read_riff_data_from_stream(self):
-        stream = io.BytesIO(b'RIFF\x08\x00\x00\x00MOCKDATA')
+    def test_read_subchunks_from_stream(self):
+        stream = io.BytesIO(
+            b'RIFF\x20\x00\x00\x00MOCK' +
+            b'CK01\x04\x00\x00\x001111' +
+            b'CK02\x08\x00\x00\x0022222222'
+        )
         riff_chunk = riff.RiffChunk.from_stream(stream)
-        self.assertEqual(b'DATA', riff_chunk.data)
+        self.assertEqual('CK01', riff_chunk.subchunk(0).id)
+        self.assertEqual(4, riff_chunk.subchunk(0).size)
+        self.assertEqual(b'1111', riff_chunk.subchunk(0).data)
+        self.assertEqual('CK02', riff_chunk.subchunk(1).id)
+        self.assertEqual(8, riff_chunk.subchunk(1).size)
+        self.assertEqual(b'22222222', riff_chunk.subchunk(1).data)
 
     def test_read_from_stream_with_truncated_chunk_id(self):
         stream = io.BytesIO(b'RIF')
@@ -48,14 +57,6 @@ class TestRiffChunk(unittest.TestCase):
             riff.RiffChunk.from_stream(stream)
         self.assertEqual(
             'Expected 2 more byte(s) after position 6', str(context.exception)
-        )
-
-    def test_read_from_stream_with_truncated_riff_format(self):
-        stream = io.BytesIO(b'RIFF\x04\x00\x00\x00M')
-        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
-            riff.RiffChunk.from_stream(stream)
-        self.assertEqual(
-            'Expected 3 more byte(s) after position 9', str(context.exception)
         )
 
     def test_read_from_stream_with_truncated_riff_data(self):

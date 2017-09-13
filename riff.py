@@ -15,6 +15,12 @@ class ChunkIdInvalid(Exception):
         super().__init__(message)
 
 
+class SeekType:
+    FROM_START = 0
+    FROM_CURRENT = 1
+    FROM_END = 2
+
+
 class Stream:
     FOUR_CC_STRUCT = struct.Struct('4s')
     UINT_STRUCT = struct.Struct('<I')
@@ -29,6 +35,9 @@ class Stream:
     @classmethod
     def from_bytes(cls, bytes):
         return cls.from_stream(io.BytesIO(bytes))
+
+    def tell(self):
+        return self._stream.tell()
 
     def read(self, size):
         bytes = self._stream.read(size)
@@ -76,10 +85,10 @@ class Chunk:
 class RiffChunk:
     ID = 'RIFF'
 
-    def __init__(self, size, format, data):
+    def __init__(self, size, format, subchunks):
         self._size = size
         self._format = format
-        self._data = data
+        self._subchunks = subchunks
 
     @classmethod
     def from_stream(cls, stream):
@@ -88,8 +97,10 @@ class RiffChunk:
             raise ChunkIdInvalid(actual=chunk.id, expected=RiffChunk.ID)
         data_stream = Stream.from_bytes(chunk.data)
         format = data_stream.read_fourcc()
-        data = data_stream.read(chunk.size - Stream.FOUR_CC_STRUCT.size)
-        return cls(chunk.size, format, data)
+        subchunks = []
+        while data_stream.tell() < chunk.size:
+            subchunks.append(Chunk.from_stream(data_stream))
+        return cls(chunk.size, format, subchunks)
 
     @property
     def id(self):
@@ -103,6 +114,9 @@ class RiffChunk:
     def format(self):
         return self._format
 
-    @property
-    def data(self):
-        return self._data
+    def subchunk(self, index):
+        return self._subchunks[index]
+
+    def subchunks(self):
+        for chunk in self._subchunks:
+            yield chunk
