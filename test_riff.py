@@ -4,6 +4,49 @@ import unittest
 import riff
 
 
+class TestStream(unittest.TestCase):
+    def test__from_stream__when_base_stream_is_stream_instance(self):
+        base_stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        stream = riff.Stream.from_stream(base_stream)
+        self.assertIs(base_stream, stream)
+
+    def test__tell__when_init_with_base_stream_pointer_at_start(self):
+        base_stream = io.BytesIO(b'MOCK')
+        stream = riff.Stream.from_stream(base_stream)
+        self.assertEqual(0, stream.tell())
+
+    def test__tell__when_init_with_base_stream_pointer_in_middle(self):
+        base_stream = io.BytesIO(b'MOCK')
+        base_stream.seek(3)
+        stream = riff.Stream.from_stream(base_stream)
+        self.assertEqual(3, stream.tell())
+
+    def test__tell__when_init_with_base_stream_pointer_after_end(self):
+        base_stream = io.BytesIO(b'MOCK')
+        base_stream.seek(7)
+        stream = riff.Stream.from_stream(base_stream)
+        self.assertEqual(7, stream.tell())
+
+    def test__tell__after_base_stream_seek_to_start(self):
+        base_stream = io.BytesIO(b'MOCK')
+        base_stream.seek(1)
+        stream = riff.Stream.from_stream(base_stream)
+        base_stream.seek(0)
+        self.assertEqual(0, stream.tell())
+
+    def test__tell__after_base_stream_seek_to_middle(self):
+        base_stream = io.BytesIO(b'MOCK')
+        stream = riff.Stream.from_stream(base_stream)
+        base_stream.seek(2)
+        self.assertEqual(2, stream.tell())
+
+    def test__tell__after_base_stream_seek_after_end(self):
+        base_stream = io.BytesIO(b'MOCK')
+        stream = riff.Stream.from_stream(base_stream)
+        base_stream.seek(9)
+        self.assertEqual(9, stream.tell())
+
+
 class TestRiffChunk(unittest.TestCase):
     def test_chunk_id(self):
         self.assertEqual('RIFF', riff.RiffChunk.ID)
