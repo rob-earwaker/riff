@@ -29,21 +29,18 @@ class Stream:
         self._stream = stream
 
     @classmethod
-    def from_stream(cls, stream):
-        return stream if isinstance(stream, Stream) else cls(stream)
-
-    @classmethod
     def from_bytes(cls, bytes):
         return cls.from_stream(io.BytesIO(bytes))
 
-    def tell(self):
-        return self._stream.tell()
+    @classmethod
+    def from_stream(cls, stream):
+        return stream if isinstance(stream, Stream) else cls(stream)
 
     def read(self, size):
         bytes = self._stream.read(size)
         missing = size - len(bytes)
         if missing > 0:
-            raise UnexpectedEndOfStream(missing, position=self._stream.tell())
+            raise UnexpectedEndOfStream(missing, position=self.tell())
         return bytes
 
     def read_fourcc(self):
@@ -53,6 +50,9 @@ class Stream:
     def read_uint(self):
         bytes = self.read(4)
         return Stream.UINT_STRUCT.unpack(bytes)[0]
+
+    def tell(self):
+        return self._stream.tell()
 
 
 class Chunk:

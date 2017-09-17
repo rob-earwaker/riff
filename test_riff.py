@@ -46,6 +46,18 @@ class TestStream(unittest.TestCase):
         base_stream.seek(9)
         self.assertEqual(9, stream.tell())
 
+    def test__tell__after_read_to_middle(self):
+        base_stream = io.BytesIO(b'MOCK')
+        stream = riff.Stream.from_stream(base_stream)
+        stream.read(2)
+        self.assertEqual(2, stream.tell())
+
+    def test__tell__after_read_past_end(self):
+        base_stream = io.BytesIO(b'MOCK')
+        stream = riff.Stream.from_stream(base_stream)
+        base_stream.read(7)
+        self.assertEqual(4, stream.tell())
+
 
 class TestRiffChunk(unittest.TestCase):
     def test_chunk_id(self):
