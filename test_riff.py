@@ -25,11 +25,11 @@ class TestStream(unittest.TestCase):
         self.assertEqual(3, stream.tell())
 
     def test_can_read_bytes(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        stream = riff.Stream.from_bytes(b'MOCK')
         self.assertEqual(b'MOCK', stream.read(4))
 
     def test_error_reading_truncated_bytes(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'M'))
+        stream = riff.Stream.from_bytes(b'M')
         with self.assertRaises(riff.UnexpectedEndOfStream) as context:
             stream.read(4)
         self.assertEqual(
@@ -37,11 +37,11 @@ class TestStream(unittest.TestCase):
         )
 
     def test_can_read_fourcc(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        stream = riff.Stream.from_bytes(b'MOCK')
         self.assertEqual('MOCK', stream.read_fourcc())
 
     def test_error_reading_truncated_fourcc(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'MO'))
+        stream = riff.Stream.from_bytes(b'MO')
         with self.assertRaises(riff.UnexpectedEndOfStream) as context:
             stream.read_fourcc()
         self.assertEqual(
@@ -49,11 +49,11 @@ class TestStream(unittest.TestCase):
         )
 
     def test_can_read_uint(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'\x04\x00\x00\x00'))
+        stream = riff.Stream.from_bytes(b'\x04\x00\x00\x00')
         self.assertEqual(4, stream.read_uint())
 
     def test_error_reading_truncated_uint(self):
-        stream = riff.Stream.from_stream(io.BytesIO(b'\x04\x00\x00'))
+        stream = riff.Stream.from_bytes(b'\x04\x00\x00')
         with self.assertRaises(riff.UnexpectedEndOfStream) as context:
             stream.read_uint()
         self.assertEqual(
