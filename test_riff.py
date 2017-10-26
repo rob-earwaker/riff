@@ -5,58 +5,60 @@ import riff
 
 
 class TestStream(unittest.TestCase):
-    def test__from_stream__when_base_stream_is_stream_instance(self):
-        base_stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+    def test_wraps_bytes(self):
+        stream = riff.Stream.from_bytes(b'MOCK')
+        self.assertIsInstance(stream, riff.Stream)
+
+    def test_wraps_existing_stream_object(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        self.assertIsInstance(stream, riff.Stream)
+
+    def test_existing_stream_object_not_double_wrapped(self):
+        base_stream = riff.Stream.from_bytes(b'MOCK')
         stream = riff.Stream.from_stream(base_stream)
         self.assertIs(base_stream, stream)
 
-    def test__tell__when_init_with_base_stream_pointer_at_start(self):
-        base_stream = io.BytesIO(b'MOCK')
-        stream = riff.Stream.from_stream(base_stream)
-        self.assertEqual(0, stream.tell())
-
-    def test__tell__when_init_with_base_stream_pointer_in_middle(self):
+    def test_tell_returns_base_stream_position(self):
         base_stream = io.BytesIO(b'MOCK')
         base_stream.seek(3)
         stream = riff.Stream.from_stream(base_stream)
         self.assertEqual(3, stream.tell())
 
-    def test__tell__when_init_with_base_stream_pointer_after_end(self):
-        base_stream = io.BytesIO(b'MOCK')
-        base_stream.seek(7)
-        stream = riff.Stream.from_stream(base_stream)
-        self.assertEqual(7, stream.tell())
+    def test_can_read_bytes(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        self.assertEqual(b'MOCK', stream.read(4))
 
-    def test__tell__after_base_stream_seek_to_start(self):
-        base_stream = io.BytesIO(b'MOCK')
-        base_stream.seek(1)
-        stream = riff.Stream.from_stream(base_stream)
-        base_stream.seek(0)
-        self.assertEqual(0, stream.tell())
+    def test_error_reading_truncated_bytes(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'M'))
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            stream.read(4)
+        self.assertEqual(
+            'Expected 3 more byte(s) after position 1', str(context.exception)
+        )
 
-    def test__tell__after_base_stream_seek_to_middle(self):
-        base_stream = io.BytesIO(b'MOCK')
-        stream = riff.Stream.from_stream(base_stream)
-        base_stream.seek(2)
-        self.assertEqual(2, stream.tell())
+    def test_can_read_fourcc(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'MOCK'))
+        self.assertEqual('MOCK', stream.read_fourcc())
 
-    def test__tell__after_base_stream_seek_after_end(self):
-        base_stream = io.BytesIO(b'MOCK')
-        stream = riff.Stream.from_stream(base_stream)
-        base_stream.seek(9)
-        self.assertEqual(9, stream.tell())
+    def test_error_reading_truncated_fourcc(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'MO'))
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            stream.read_fourcc()
+        self.assertEqual(
+            'Expected 2 more byte(s) after position 2', str(context.exception)
+        )
 
-    def test__tell__after_read_to_middle(self):
-        base_stream = io.BytesIO(b'MOCK')
-        stream = riff.Stream.from_stream(base_stream)
-        stream.read(2)
-        self.assertEqual(2, stream.tell())
+    def test_can_read_uint(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'\x04\x00\x00\x00'))
+        self.assertEqual(4, stream.read_uint())
 
-    def test__tell__after_read_past_end(self):
-        base_stream = io.BytesIO(b'MOCK')
-        stream = riff.Stream.from_stream(base_stream)
-        base_stream.read(7)
-        self.assertEqual(4, stream.tell())
+    def test_error_reading_truncated_uint(self):
+        stream = riff.Stream.from_stream(io.BytesIO(b'\x04\x00\x00'))
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            stream.read_uint()
+        self.assertEqual(
+            'Expected 1 more byte(s) after position 3', str(context.exception)
+        )
 
 
 class TestRiffChunk(unittest.TestCase):
