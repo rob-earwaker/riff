@@ -15,12 +15,6 @@ class ChunkIdInvalid(Exception):
         super().__init__(message)
 
 
-class SeekType:
-    FROM_START = 0
-    FROM_CURRENT = 1
-    FROM_END = 2
-
-
 class Stream:
     FOUR_CC_STRUCT = struct.Struct('4s')
     UINT_STRUCT = struct.Struct('<I')
