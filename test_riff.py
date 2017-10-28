@@ -4,6 +4,52 @@ import unittest
 import riff
 
 
+class TestChunk(unittest.TestCase):
+    def test_read_chunk_id_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk = riff.Chunk.from_stream(stream)
+        self.assertEqual('MOCK', chunk.id)
+
+    def test_error_reading_truncated_chunk_id(self):
+        stream = io.BytesIO(b'MOC')
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            riff.Chunk.from_stream(stream)
+        self.assertEqual(
+            'Expected 1 more byte(s) after position 3', str(context.exception)
+        )
+
+    def test_read_chunk_size_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk = riff.Chunk.from_stream(stream)
+        self.assertEqual(4, chunk.size)
+
+    def test_error_reading_truncated_chunk_size(self):
+        stream = io.BytesIO(b'MOCK\x04')
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            riff.Chunk.from_stream(stream)
+        self.assertEqual(
+            'Expected 3 more byte(s) after position 5', str(context.exception)
+        )
+
+    def test_read_chunk_data_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk = riff.Chunk.from_stream(stream)
+        self.assertEqual(b'DATA', chunk.data)
+
+    def test_error_reading_truncated_chunk_data(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DA')
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            riff.Chunk.from_stream(stream)
+        self.assertEqual(
+            'Expected 2 more byte(s) after position 10', str(context.exception)
+        )
+
+    def test_does_not_read_past_chunk_end(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATAMOCK')
+        riff.Chunk.from_stream(stream)
+        self.assertEqual(12, stream.tell())
+
+
 class TestStream(unittest.TestCase):
     def test_wraps_bytes(self):
         stream = riff.Stream.from_bytes(b'MOCK')
