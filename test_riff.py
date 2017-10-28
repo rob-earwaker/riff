@@ -63,6 +63,20 @@ class TestChunk(unittest.TestCase):
         riff.Chunk.from_stream(stream)
         self.assertEqual(12, stream.tell())
 
+    def test_chunks_with_same_data_equal(self):
+        stream1 = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk1 = riff.Chunk.from_stream(stream1)
+        stream2 = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk2 = riff.Chunk.from_stream(stream2)
+        self.assertEqual(chunk1, chunk2)
+
+    def test_chunks_with_different_data_not_equal(self):
+        stream1 = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk1 = riff.Chunk.from_stream(stream1)
+        stream2 = io.BytesIO(b'MOCK\x04\x00\x00\x00ATAD')
+        chunk2 = riff.Chunk.from_stream(stream2)
+        self.assertNotEqual(chunk1, chunk2)
+
 
 class TestStream(unittest.TestCase):
     def test_wraps_bytes(self):
@@ -146,19 +160,27 @@ class TestRiffChunk(unittest.TestCase):
         riff_chunk = riff.RiffChunk.from_stream(stream)
         self.assertEqual('MOCK', riff_chunk.format)
 
-    def test_read_subchunks_from_stream(self):
+    def test_read_first_subchunk_id(self):
+        stream = io.BytesIO(
+            b'RIFF\x10\x00\x00\x00MOCK' + b'CK01\x04\x00\x00\x001111'
+        )
+        riff_chunk = riff.RiffChunk.from_stream(stream)
+        self.assertEqual(
+            riff.Chunk(id='CK01', size=4, data_bytes=b'1111'),
+            riff_chunk.subchunk(0)
+        )
+
+    def test_read_second_subchunk(self):
         stream = io.BytesIO(
             b'RIFF\x20\x00\x00\x00MOCK' +
             b'CK01\x04\x00\x00\x001111' +
             b'CK02\x08\x00\x00\x0022222222'
         )
         riff_chunk = riff.RiffChunk.from_stream(stream)
-        self.assertEqual('CK01', riff_chunk.subchunk(0).id)
-        self.assertEqual(4, riff_chunk.subchunk(0).size)
-        self.assertEqual(b'1111', riff_chunk.subchunk(0).data_bytes)
-        self.assertEqual('CK02', riff_chunk.subchunk(1).id)
-        self.assertEqual(8, riff_chunk.subchunk(1).size)
-        self.assertEqual(b'22222222', riff_chunk.subchunk(1).data_bytes)
+        self.assertEqual(
+            riff.Chunk(id='CK02', size=8, data_bytes=b'22222222'),
+            riff_chunk.subchunk(1)
+        )
 
     def test_read_from_stream_with_truncated_chunk_id(self):
         stream = io.BytesIO(b'RIF')

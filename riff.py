@@ -55,6 +55,14 @@ class Chunk:
         self._size = size
         self._data_bytes = data_bytes
 
+    def __eq__(self, other):
+        if not isinstance(other, Chunk):
+            return NotImplemented
+        return self.id == other.id and self.data_bytes == other.data_bytes
+
+    def __ne__(self, other):
+        return not self == other
+
     @classmethod
     def from_stream(cls, stream):
         stream = Stream.from_stream(stream)
