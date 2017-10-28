@@ -5,7 +5,7 @@ import riff
 
 
 class TestChunk(unittest.TestCase):
-    def test_read_chunk_id_from_stream(self):
+    def test_read_chunk_id(self):
         stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
         chunk = riff.Chunk.from_stream(stream)
         self.assertEqual('MOCK', chunk.id)
@@ -18,7 +18,7 @@ class TestChunk(unittest.TestCase):
             'Expected 1 more byte(s) after position 3', str(context.exception)
         )
 
-    def test_read_chunk_size_from_stream(self):
+    def test_read_chunk_size(self):
         stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
         chunk = riff.Chunk.from_stream(stream)
         self.assertEqual(4, chunk.size)
@@ -31,10 +31,15 @@ class TestChunk(unittest.TestCase):
             'Expected 3 more byte(s) after position 5', str(context.exception)
         )
 
-    def test_read_chunk_data_from_stream(self):
+    def test_read_chunk_data_as_bytes(self):
         stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
         chunk = riff.Chunk.from_stream(stream)
-        self.assertEqual(b'DATA', chunk.data)
+        self.assertEqual(b'DATA', chunk.data_bytes)
+
+    def test_read_chunk_data_as_stream(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATA')
+        chunk = riff.Chunk.from_stream(stream)
+        self.assertEqual(b'DATA', chunk.data_stream().read(4))
 
     def test_error_reading_truncated_chunk_data(self):
         stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DA')
@@ -44,7 +49,16 @@ class TestChunk(unittest.TestCase):
             'Expected 2 more byte(s) after position 10', str(context.exception)
         )
 
-    def test_does_not_read_past_chunk_end(self):
+    def test_data_stream_cannot_read_past_chunk_end(self):
+        stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATAMOCK')
+        chunk = riff.Chunk.from_stream(stream)
+        with self.assertRaises(riff.UnexpectedEndOfStream) as context:
+            chunk.data_stream().read(8)
+        self.assertEqual(
+            'Expected 4 more byte(s) after position 4', str(context.exception)
+        )
+
+    def test_from_stream_does_not_read_past_chunk_end(self):
         stream = io.BytesIO(b'MOCK\x04\x00\x00\x00DATAMOCK')
         riff.Chunk.from_stream(stream)
         self.assertEqual(12, stream.tell())
@@ -141,10 +155,10 @@ class TestRiffChunk(unittest.TestCase):
         riff_chunk = riff.RiffChunk.from_stream(stream)
         self.assertEqual('CK01', riff_chunk.subchunk(0).id)
         self.assertEqual(4, riff_chunk.subchunk(0).size)
-        self.assertEqual(b'1111', riff_chunk.subchunk(0).data)
+        self.assertEqual(b'1111', riff_chunk.subchunk(0).data_bytes)
         self.assertEqual('CK02', riff_chunk.subchunk(1).id)
         self.assertEqual(8, riff_chunk.subchunk(1).size)
-        self.assertEqual(b'22222222', riff_chunk.subchunk(1).data)
+        self.assertEqual(b'22222222', riff_chunk.subchunk(1).data_bytes)
 
     def test_read_from_stream_with_truncated_chunk_id(self):
         stream = io.BytesIO(b'RIF')

@@ -50,18 +50,18 @@ class Stream:
 
 
 class Chunk:
-    def __init__(self, id, size, data):
+    def __init__(self, id, size, data_bytes):
         self._id = id
         self._size = size
-        self._data = data
+        self._data_bytes = data_bytes
 
     @classmethod
     def from_stream(cls, stream):
         stream = Stream.from_stream(stream)
         id = stream.read_fourcc()
         size = stream.read_uint()
-        data = stream.read(size)
-        return cls(id, size, data)
+        data_bytes = stream.read(size)
+        return cls(id, size, data_bytes)
 
     @property
     def id(self):
@@ -72,8 +72,11 @@ class Chunk:
         return self._size
 
     @property
-    def data(self):
-        return self._data
+    def data_bytes(self):
+        return self._data_bytes
+
+    def data_stream(self):
+        return Stream.from_bytes(self.data_bytes)
 
 
 class RiffChunk:
@@ -89,7 +92,7 @@ class RiffChunk:
         chunk = Chunk.from_stream(stream)
         if not chunk.id == RiffChunk.ID:
             raise ChunkIdInvalid(actual=chunk.id, expected=RiffChunk.ID)
-        data_stream = Stream.from_bytes(chunk.data)
+        data_stream = chunk.data_stream()
         format = data_stream.read_fourcc()
         subchunks = []
         while data_stream.tell() < chunk.size:
