@@ -182,6 +182,16 @@ class TestRiffChunk(unittest.TestCase):
             riff_chunk.subchunk(1)
         )
 
+    def test_can_iterate_subchunks(self):
+        stream = io.BytesIO(
+            b'RIFF\x20\x00\x00\x00MOCK' +
+            b'CK01\x04\x00\x00\x001111' +
+            b'CK02\x08\x00\x00\x0022222222'
+        )
+        riff_chunk = riff.RiffChunk.from_stream(stream)
+        for subchunk in riff_chunk.subchunks():
+            self.assertIsInstance(subchunk, riff.Chunk)
+
     def test_read_from_stream_with_truncated_chunk_id(self):
         stream = io.BytesIO(b'RIF')
         with self.assertRaises(riff.UnexpectedEndOfStream) as context:
