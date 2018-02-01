@@ -8,6 +8,10 @@ class ChunkReadError(Exception):
     pass
 
 
+class RiffChunkReadError(ChunkReadError):
+    pass
+
+
 class Chunk:
     ID_STRUCT = FOUR_CC_STRUCT
     SIZE_STRUCT = struct.Struct('<I')
@@ -33,18 +37,21 @@ class Chunk:
     def read(cls, stream):
         bytestr = stream.read(cls.ID_STRUCT.size)
         if len(bytestr) < cls.ID_STRUCT.size:
-            raise ChunkReadError('chunk id truncated')
+            raise ChunkReadError('chunk id truncated')           
         id = cls.ID_STRUCT.unpack(bytestr)[0].decode('ascii')
+
         bytestr = stream.read(cls.SIZE_STRUCT.size)
         if len(bytestr) < cls.SIZE_STRUCT.size:
             raise ChunkReadError('chunk size truncated')
         size = cls.SIZE_STRUCT.unpack(bytestr)[0]
+
         return cls(id, size, data=stream)
 
 
 class RiffChunk:
     ID = 'RIFF'
     FORMAT_STRUCT = FOUR_CC_STRUCT
+    MIN_CHUNK_SIZE = FORMAT_STRUCT.size
 
     def __init__(self, size, format):
         self._size = size
@@ -65,6 +72,18 @@ class RiffChunk:
     @classmethod
     def read(cls, stream):
         chunk = Chunk.read(stream)
+        if not chunk.id == cls.ID:
+            raise RiffChunkReadError(
+                "chunk id '{0}' != '{1}'".format(chunk.id, cls.ID)
+            )
+        if chunk.size < cls.MIN_CHUNK_SIZE:
+            raise RiffChunkReadError(
+                'chunk size {0} < {1}'.format(chunk.size, cls.MIN_CHUNK_SIZE)
+            )
+
         bytestr = chunk.data.read(cls.FORMAT_STRUCT.size)
+        if len(bytestr) < cls.FORMAT_STRUCT.size:
+            raise RiffChunkReadError('chunk format truncated')
         format = cls.FORMAT_STRUCT.unpack(bytestr)[0].decode('ascii')
+
         return cls(chunk.size, format)
