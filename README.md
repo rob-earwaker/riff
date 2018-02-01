@@ -67,10 +67,10 @@ riff.RiffChunkReadError: chunk id 'TEST' != 'RIFF'
 ```
 
 ```python
->>> riff.RiffChunk.read(io.BytesIO(b'RIFF\x00\x00\x00\x00'))
+>>> riff.RiffChunk.read(io.BytesIO(b'RIFF\x03\x00\x00\x00TES'))
 Traceback (most recent call last):
   ...
-riff.RiffChunkReadError: chunk size 0 < 4
+riff.RiffChunkReadError: chunk size 3 < min size 4
 >>>
 ```
 

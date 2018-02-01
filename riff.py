@@ -78,7 +78,9 @@ class RiffChunk:
             )
         if chunk.size < cls.MIN_CHUNK_SIZE:
             raise RiffChunkReadError(
-                'chunk size {0} < {1}'.format(chunk.size, cls.MIN_CHUNK_SIZE)
+                'chunk size {0} < min size {1}'.format(
+                    chunk.size, cls.MIN_CHUNK_SIZE
+                )
             )
 
         bytestr = chunk.data.read(cls.FORMAT_STRUCT.size)
