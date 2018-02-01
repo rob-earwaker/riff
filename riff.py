@@ -96,7 +96,7 @@ class RiffChunk:
         self._subchunks = subchunks
 
     @classmethod
-    def from_stream(cls, stream):
+    def read(cls, stream):
         chunk = Chunk.from_stream(stream)
         if not chunk.id == RiffChunk.ID:
             raise ChunkIdInvalid(actual=chunk.id, expected=RiffChunk.ID)
