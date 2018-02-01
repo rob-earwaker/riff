@@ -22,16 +22,29 @@ b'TestChunkData'
 >>>
 ```
 
+### Exceptions
+
+```python
+>>> riff.Chunk.read(io.BytesIO(b'TES'))
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: chunk id truncated
+>>>
+```
+
+```python
+>>> riff.Chunk.read(io.BytesIO(b'TEST\x0d\x00\x00'))
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: chunk size truncated
+>>>
+```
+
 ## `riff.RiffChunk`
 
 ```python
 >>> import io
 >>> stream = io.BytesIO(b'RIFF\x04\x00\x00\x00TEST')
->>>
-```
-
-```python
->>> import riff
 >>> riff_chunk = riff.RiffChunk.read(stream)
 >>> riff_chunk.id
 'RIFF'

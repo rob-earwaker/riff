@@ -1,26 +1,17 @@
 import struct
 
 
-class Stream:
-    FOUR_CC_STRUCT = struct.Struct('4s')
-    UINT_STRUCT = struct.Struct('<I')
+FOUR_CC_STRUCT = struct.Struct('4s')
 
-    def __init__(self, stream):
-        self._stream = stream
 
-    def read(self, size):
-        return self._stream.read(size)
-
-    def read_four_cc(self):
-        bytestr = self.read(Stream.FOUR_CC_STRUCT.size)
-        return Stream.FOUR_CC_STRUCT.unpack(bytestr)[0].decode('ascii')
-
-    def read_uint(self):
-        bytestr = self.read(Stream.UINT_STRUCT.size)
-        return Stream.UINT_STRUCT.unpack(bytestr)[0]
+class ChunkReadError(Exception):
+    pass
 
 
 class Chunk:
+    ID_STRUCT = FOUR_CC_STRUCT
+    SIZE_STRUCT = struct.Struct('<I')
+
     def __init__(self, id, size, data):
         self._id = id
         self._size = size
@@ -40,14 +31,20 @@ class Chunk:
 
     @classmethod
     def read(cls, stream):
-        stream = Stream(stream)
-        id = stream.read_four_cc()
-        size = stream.read_uint()
+        bytestr = stream.read(cls.ID_STRUCT.size)
+        if len(bytestr) < cls.ID_STRUCT.size:
+            raise ChunkReadError('chunk id truncated')
+        id = cls.ID_STRUCT.unpack(bytestr)[0].decode('ascii')
+        bytestr = stream.read(cls.SIZE_STRUCT.size)
+        if len(bytestr) < cls.SIZE_STRUCT.size:
+            raise ChunkReadError('chunk size truncated')
+        size = cls.SIZE_STRUCT.unpack(bytestr)[0]
         return cls(id, size, data=stream)
 
 
 class RiffChunk:
     ID = 'RIFF'
+    FORMAT_STRUCT = FOUR_CC_STRUCT
 
     def __init__(self, size, format):
         self._size = size
@@ -55,7 +52,7 @@ class RiffChunk:
 
     @property
     def id(self):
-        return RiffChunk.ID
+        return self.ID
 
     @property
     def size(self):
@@ -68,5 +65,6 @@ class RiffChunk:
     @classmethod
     def read(cls, stream):
         chunk = Chunk.read(stream)
-        format = chunk.data.read_four_cc()
+        bytestr = chunk.data.read(cls.FORMAT_STRUCT.size)
+        format = cls.FORMAT_STRUCT.unpack(bytestr)[0].decode('ascii')
         return cls(chunk.size, format)
