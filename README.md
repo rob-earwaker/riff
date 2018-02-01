@@ -27,20 +27,40 @@ For this demonstration, we'll use the [`io`](https://docs.python.org/library/io.
 The chunk data is exposed as a stream-like object.
 
 ```python
+>>> chunk.data.size
+13
+>>> stream.tell()
+8
+>>> chunk.data.tell()
+0
 >>> chunk.data.read(9)
 b'TestChunk'
->>> stream.tell()
-17
+>>> chunk.data.tell()
+9
 >>> chunk.data.read(4)
 b'Data'
->>> stream.tell()
-21
+>>>
+```
+
+The chunk data stream will prevent you reading beyond the number of bytes specified by the chunk size, even if the source stream contains more data.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x0d\x00\x00\x00TestChunkDataExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.read(13)
+b'TestChunkData'
+>>> chunk.data.tell()
+13
+>>> chunk.data.read(9)
+b''
+>>> chunk.data.tell()
+13
 >>>
 ```
 
 ### Exceptions
 
-When trying to read a chunk with a truncated chunk identifier.
+Trying to read a chunk with a truncated chunk identifier.
 
 ```python
 >>> riff.Chunk.read(io.BytesIO(b'TES'))
@@ -50,7 +70,7 @@ riff.ChunkReadError: chunk id truncated
 >>>
 ```
 
-When trying to read a chunk with a truncated chunk size.
+Trying to read a chunk with a truncated chunk size.
 
 ```python
 >>> riff.Chunk.read(io.BytesIO(b'TEST\x0d\x00\x00'))

@@ -12,6 +12,29 @@ class RiffChunkReadError(ChunkReadError):
     pass
 
 
+class ChunkData:
+    def __init__(self, stream, startpos, size):
+        self._stream = stream
+        self._startpos = startpos
+        self._size = size
+
+    @property
+    def size(self):
+        return self._size
+
+    @classmethod
+    def create(cls, stream, size):
+        startpos = stream.tell()
+        return cls(stream, startpos, size)
+
+    def tell(self):
+        return self._stream.tell() - self._startpos
+
+    def read(self, size):
+        size = min(size, self._size - self.tell())
+        return self._stream.read(size)
+
+
 class Chunk:
     ID_STRUCT = FOUR_CC_STRUCT
     SIZE_STRUCT = struct.Struct('<I')
@@ -45,7 +68,9 @@ class Chunk:
             raise ChunkReadError('chunk size truncated')
         size = cls.SIZE_STRUCT.unpack(bytestr)[0]
 
-        return cls(id, size, data=stream)
+        data = ChunkData.create(stream, size)
+
+        return cls(id, size, data)
 
 
 class RiffChunk:
