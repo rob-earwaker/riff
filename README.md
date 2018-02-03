@@ -95,6 +95,19 @@ b'ExtraData'
 
 ### Exceptions
 
+Trying to read from a stream that is not readable.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import unittest.mock
+>>> stream.readable = unittest.mock.Mock(return_value=False)
+>>> riff.Chunk.read(stream)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: stream is not readable
+>>>
+```
+
 Trying to read a chunk with a truncated header.
 
 ```python

@@ -61,6 +61,8 @@ class Chunk:
 
     @classmethod
     def read(cls, stream):
+        if not stream.readable():
+            raise ChunkReadError('stream is not readable')
         bytestr = stream.read(cls.HEADER_STRUCT.size)
         if len(bytestr) < cls.HEADER_STRUCT.size:
             raise ChunkReadError('header truncated')           
