@@ -60,25 +60,20 @@ b''
 
 ### Exceptions
 
-Trying to read a chunk with a truncated chunk identifier.
+Trying to read a chunk with a truncated header.
 
 ```python
 >>> stream = io.BytesIO(b'TES')
 >>> riff.Chunk.read(stream)
 Traceback (most recent call last):
   ...
-riff.ChunkReadError: chunk id truncated
+riff.ChunkReadError: header truncated
 >>>
-```
-
-Trying to read a chunk with a truncated chunk size.
-
-```python
->>> stream = io.BytesIO(b'TEST\x0d\x00\x00')
+>>> stream = io.BytesIO(b'TEST\x04\x00')
 >>> riff.Chunk.read(stream)
 Traceback (most recent call last):
   ...
-riff.ChunkReadError: chunk size truncated
+riff.ChunkReadError: header truncated
 >>>
 ```
 

@@ -39,8 +39,7 @@ class ChunkData:
 
 
 class Chunk:
-    ID_STRUCT = FOUR_CC_STRUCT
-    SIZE_STRUCT = struct.Struct('<I')
+    HEADER_STRUCT = struct.Struct('<4sI')
 
     def __init__(self, id, size, data):
         self._id = id
@@ -61,18 +60,12 @@ class Chunk:
 
     @classmethod
     def read(cls, stream):
-        bytestr = stream.read(cls.ID_STRUCT.size)
-        if len(bytestr) < cls.ID_STRUCT.size:
-            raise ChunkReadError('chunk id truncated')           
-        id = cls.ID_STRUCT.unpack(bytestr)[0].decode('ascii')
-
-        bytestr = stream.read(cls.SIZE_STRUCT.size)
-        if len(bytestr) < cls.SIZE_STRUCT.size:
-            raise ChunkReadError('chunk size truncated')
-        size = cls.SIZE_STRUCT.unpack(bytestr)[0]
-
+        bytestr = stream.read(cls.HEADER_STRUCT.size)
+        if len(bytestr) < cls.HEADER_STRUCT.size:
+            raise ChunkReadError('header truncated')           
+        idbytes, size = cls.HEADER_STRUCT.unpack(bytestr)
+        id = idbytes.decode('ascii')
         data = ChunkData.create(stream, size)
-
         return cls(id, size, data)
 
 
