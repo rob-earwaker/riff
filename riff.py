@@ -34,6 +34,10 @@ class ChunkData:
             raise ChunkReadError('chunk data truncated')
         return bytestr
 
+    def skip(self):
+        endpos = self._startpos + self.size + self.size % 2
+        self._stream.seek(endpos)
+
 
 class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')

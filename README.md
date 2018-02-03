@@ -58,6 +58,41 @@ b''
 >>>
 ```
 
+A chunk's data can be skipped to move the stream position to the end of the data stream.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
+Data is skipped from the current position of the chunk data stream, so will work after reading all or part of the chunk's data.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.read(4)
+b'Test'
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
+Skipping will also skip over the chunk's pad byte if the chunk has an odd number of data bytes.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00ExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
 ### Exceptions
 
 Trying to read a chunk with a truncated header.
