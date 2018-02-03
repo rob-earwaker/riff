@@ -11,7 +11,7 @@ For this demonstration, we'll use the [`io`](https://docs.python.org/library/io.
 
 ```python
 >>> import io
->>> stream = io.BytesIO(b'TEST\x0d\x00\x00\x00TestChunkData')
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
 >>>
 >>> import riff
 >>> chunk = riff.Chunk.read(stream)
@@ -20,7 +20,7 @@ For this demonstration, we'll use the [`io`](https://docs.python.org/library/io.
 >>> chunk.id
 'TEST'
 >>> chunk.size
-13
+8
 >>>
 ```
 
@@ -28,15 +28,15 @@ The chunk data is exposed as a stream-like object.
 
 ```python
 >>> chunk.data.size
-13
+8
 >>> stream.tell()
 8
 >>> chunk.data.tell()
 0
->>> chunk.data.read(9)
-b'TestChunk'
+>>> chunk.data.read(4)
+b'Test'
 >>> chunk.data.tell()
-9
+4
 >>> chunk.data.read(4)
 b'Data'
 >>>
@@ -45,16 +45,16 @@ b'Data'
 The chunk data stream will prevent you reading beyond the number of bytes specified by the chunk size, even if the source stream contains more data.
 
 ```python
->>> stream = io.BytesIO(b'TEST\x0d\x00\x00\x00TestChunkDataExtraData')
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
 >>> chunk = riff.Chunk.read(stream)
->>> chunk.data.read(13)
-b'TestChunkData'
+>>> chunk.data.read(8)
+b'TestData'
 >>> chunk.data.tell()
-13
+8
 >>> chunk.data.read(9)
 b''
 >>> chunk.data.tell()
-13
+8
 >>>
 ```
 
@@ -82,7 +82,7 @@ b'ExtraData'
 >>>
 ```
 
-Skipping will also skip over the chunk's pad byte if the chunk has an odd number of data bytes.
+Skipping will also skip over the chunk's pad byte if the chunk has an odd number of bytes.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00ExtraData')
@@ -115,10 +115,10 @@ riff.ChunkReadError: header truncated
 Trying to read a chunk with truncated data.
 
 ```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00DATA')
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDa')
 >>> chunk = riff.Chunk.read(stream)
 >>> chunk.data.read(4)
-b'DATA'
+b'Test'
 >>> chunk.data.read(4)
 Traceback (most recent call last):
   ...
