@@ -38,6 +38,9 @@ class ChunkData:
         endpos = self._startpos + self.size + self.size % 2
         self._stream.seek(endpos)
 
+    def __repr__(self):
+        return 'riff.ChunkData(size={0})'.format(self.size)
+
 
 class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
@@ -70,6 +73,9 @@ class Chunk:
         id = idbytes.decode('ascii')
         data = ChunkData.create(stream, size)
         return cls(id, size, data)
+
+    def __repr__(self):
+        return "riff.Chunk(id='{0}', size={1})".format(self.id, self.size)
 
 
 class RiffChunk:
@@ -113,3 +119,8 @@ class RiffChunk:
         format = cls.FORMAT_STRUCT.unpack(bytestr)[0].decode('ascii')
 
         return cls(chunk.size, format)
+
+    def __repr__(self):
+        return "riff.RiffChunk(size={0}, format='{1}')".format(
+            self.size, self.format
+        )

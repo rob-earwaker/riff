@@ -17,10 +17,8 @@ For this demonstration, we'll use the [`io`](https://docs.python.org/library/io.
 >>> chunk = riff.Chunk.read(stream)
 >>> stream.tell()
 8
->>> chunk.id
-'TEST'
->>> chunk.size
-8
+>>> chunk
+riff.Chunk(id='TEST', size=8)
 >>>
 ```
 
@@ -28,7 +26,7 @@ The chunk's data is exposed as a stream-like [`riff.ChunkData`](#riffchunkdata) 
 
 ```python
 >>> chunk.data
-<riff.ChunkData object at 0x...>
+riff.ChunkData(size=8)
 >>>
 ```
 
@@ -151,17 +149,14 @@ riff.ChunkReadError: chunk data truncated
 >>>
 ```
 
+## `riff.read_chunks`
+
 ## `riff.RiffChunk`
 
 ```python
 >>> stream = io.BytesIO(b'RIFF\x04\x00\x00\x00TEST')
->>> riff_chunk = riff.RiffChunk.read(stream)
->>> riff_chunk.id
-'RIFF'
->>> riff_chunk.size
-4
->>> riff_chunk.format
-'TEST'
+>>> riff.RiffChunk.read(stream)
+riff.RiffChunk(size=4, format='TEST')
 >>> stream.tell()
 12
 >>>
