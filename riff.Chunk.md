@@ -1,6 +1,6 @@
-# [`riff.Chunk`](#riff.Chunk.md#riffchunk)
+# [`riff.Chunk`](riff.Chunk.md#riffchunk)
 
-The [`riff.Chunk`](#riff.Chunk.md#riffchunk) type represents a RIFF-formatted chunk, which consists of the following elements:
+The [`riff.Chunk`](riff.Chunk.md#riffchunk) type represents a RIFF-formatted chunk, which consists of the following elements:
 
 | Element    | # Bytes    | Format                                                      |
 |------------|------------|-------------------------------------------------------------|
@@ -9,16 +9,16 @@ The [`riff.Chunk`](#riff.Chunk.md#riffchunk) type represents a RIFF-formatted ch
 | Data       | {size}     | Varies, multi-byte integers are assumed to be little-endian |
 | Pad        | {size} % 2 | Any (only present if {size} is odd)                         |
 
-The [`riff.Chunk`](#riff.Chunk.md#riffchunk) class has the following properties and methods:
+The [`riff.Chunk`](riff.Chunk.md#riffchunk) class has the following properties and methods:
 
-- [`riff.Chunk.read`](#riff.Chunk.md#riffchunkread)
+- [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
 - `<riff.Chunk>.id`
 - `<riff.Chunk>.size`
 - `<riff.Chunk>.data`
 
-## [`riff.Chunk.read`](#riff.Chunk.md#riffchunkread)
+## [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
 
-The recommended way to create a [`riff.Chunk`](#riff.Chunk.md#riffchunk) instance. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
+The recommended way to create a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
 
 ```python
 >>> import io
@@ -33,7 +33,7 @@ riff.Chunk(id='TEST', size=8)
 >>>
 ```
 
-A [`riff.ChunkReadError`](#riff.ChunkReadError.md#riffchunkreaderror) will be raised in the following circumstances.
+A [`riff.ChunkReadError`](riff.ChunkReadError.md#riffchunkreaderror) will be raised in the following circumstances.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
