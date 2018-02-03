@@ -2,7 +2,7 @@
 
 ## `riff.Chunk`
 
-A generic RIFF-formatted chunk is read using the `riff.Chunk.read` class method. This reads the chunk identifier and chunk size from an IO stream.
+A generic RIFF-formatted chunk is read using the `riff.Chunk.read` class method. This reads the chunk identifier and chunk size from a binary IO stream.
 
 - Chunk identifier: 4 bytes, ASCII encoded string
 - Chunk size: 4 bytes, little-endian unsigned integer
@@ -24,12 +24,54 @@ For this demonstration, we'll use the [`io`](https://docs.python.org/library/io.
 >>>
 ```
 
-The chunk data is exposed as a stream-like object.
+The chunk's data is exposed as a stream-like [`riff.ChunkData`](#riffchunkdata) instance.
 
 ```python
+>>> chunk.data
+<riff.ChunkData object at 0x...>
+>>>
+```
+
+### Exceptions
+
+Trying to read from a stream that is not readable.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import unittest.mock
+>>> stream.readable = unittest.mock.Mock(return_value=False)
+>>> riff.Chunk.read(stream)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: stream is not readable
+>>>
+```
+
+Trying to read a chunk with a truncated header.
+
+```python
+>>> stream = io.BytesIO(b'TES')
+>>> riff.Chunk.read(stream)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: header truncated
+>>>
+>>> stream = io.BytesIO(b'TEST\x04\x00')
+>>> riff.Chunk.read(stream)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: header truncated
+>>>
+```
+
+## `riff.ChunkData`
+
+The `riff.ChunkData` type represents a RIFF-formatted chunk's data as a stream-like object.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> chunk = riff.Chunk.read(stream)
 >>> chunk.data.size
-8
->>> stream.tell()
 8
 >>> chunk.data.tell()
 0
@@ -94,36 +136,6 @@ b'ExtraData'
 ```
 
 ### Exceptions
-
-Trying to read from a stream that is not readable.
-
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
->>> import unittest.mock
->>> stream.readable = unittest.mock.Mock(return_value=False)
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: stream is not readable
->>>
-```
-
-Trying to read a chunk with a truncated header.
-
-```python
->>> stream = io.BytesIO(b'TES')
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: header truncated
->>>
->>> stream = io.BytesIO(b'TEST\x04\x00')
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: header truncated
->>>
-```
 
 Trying to read a chunk with truncated data.
 
