@@ -1,9 +1,6 @@
 import struct
 
 
-FOUR_CC_STRUCT = struct.Struct('4s')
-
-
 class ChunkReadError(Exception):
     pass
 
@@ -71,7 +68,7 @@ class Chunk:
 
 class RiffChunk:
     ID = 'RIFF'
-    FORMAT_STRUCT = FOUR_CC_STRUCT
+    FORMAT_STRUCT = struct.Struct('4s')
     MIN_CHUNK_SIZE = FORMAT_STRUCT.size
 
     def __init__(self, size, format):
