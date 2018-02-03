@@ -1,15 +1,15 @@
-# `riff.Chunk`
+# [`riff.Chunk`](#riff.Chunk.md#riffchunk)
 
-The `riff.Chunk` type represents a RIFF-formatted chunk, which consists of the following elements:
+The [`riff.Chunk`](#riff.Chunk.md#riffchunk) type represents a RIFF-formatted chunk, which consists of the following elements:
 
 | Element    | # Bytes    | Format                                                      |
 |------------|------------|-------------------------------------------------------------|
 | Identifier | 4          | ASCII encoded string                                        |
 | Size       | 4          | Little-endian unsigned integer                              |
-| Data       | <size>     | Varies, multi-byte integers are assumed to be little-endian |
-| Pad        | <size> % 2 | Any (only present if <size> is odd)                         |
+| Data       | {size}     | Varies, multi-byte integers are assumed to be little-endian |
+| Pad        | {size} % 2 | Any (only present if {size} is odd)                         |
 
-The `riff.Chunk` class has the following properties and methods:
+The [`riff.Chunk`](#riff.Chunk.md#riffchunk) class has the following properties and methods:
 
 - [`riff.Chunk.read`](#riff.Chunk.md#riffchunkread)
 - `<riff.Chunk>.id`
@@ -33,7 +33,7 @@ riff.Chunk(id='TEST', size=8)
 >>>
 ```
 
-A `riff.ChunkReadError` will be raised in the following circumstances.
+A [`riff.ChunkReadError`](#riff.ChunkReadError.md#riffchunkreaderror) will be raised in the following circumstances.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
