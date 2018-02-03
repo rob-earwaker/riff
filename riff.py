@@ -32,7 +32,10 @@ class ChunkData:
 
     def read(self, size):
         size = min(size, self._size - self.tell())
-        return self._stream.read(size)
+        bytestr = self._stream.read(size)
+        if len(bytestr) < size:
+            raise ChunkReadError('chunk data truncated')
+        return bytestr
 
 
 class Chunk:

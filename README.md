@@ -63,7 +63,8 @@ b''
 Trying to read a chunk with a truncated chunk identifier.
 
 ```python
->>> riff.Chunk.read(io.BytesIO(b'TES'))
+>>> stream = io.BytesIO(b'TES')
+>>> riff.Chunk.read(stream)
 Traceback (most recent call last):
   ...
 riff.ChunkReadError: chunk id truncated
@@ -73,10 +74,25 @@ riff.ChunkReadError: chunk id truncated
 Trying to read a chunk with a truncated chunk size.
 
 ```python
->>> riff.Chunk.read(io.BytesIO(b'TEST\x0d\x00\x00'))
+>>> stream = io.BytesIO(b'TEST\x0d\x00\x00')
+>>> riff.Chunk.read(stream)
 Traceback (most recent call last):
   ...
 riff.ChunkReadError: chunk size truncated
+>>>
+```
+
+Trying to read a chunk with truncated data.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00DATA')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.read(4)
+b'DATA'
+>>> chunk.data.read(4)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: chunk data truncated
 >>>
 ```
 
@@ -99,7 +115,8 @@ riff.ChunkReadError: chunk size truncated
 ### Exceptions
 
 ```python
->>> riff.RiffChunk.read(io.BytesIO(b'TEST\x00\x00\x00\x00'))
+>>> stream = io.BytesIO(b'TEST\x00\x00\x00\x00')
+>>> riff.RiffChunk.read(stream)
 Traceback (most recent call last):
   ...
 riff.RiffChunkReadError: chunk id 'TEST' != 'RIFF'
@@ -107,17 +124,10 @@ riff.RiffChunkReadError: chunk id 'TEST' != 'RIFF'
 ```
 
 ```python
->>> riff.RiffChunk.read(io.BytesIO(b'RIFF\x03\x00\x00\x00TES'))
+>>> stream = io.BytesIO(b'RIFF\x03\x00\x00\x00TES')
+>>> riff.RiffChunk.read(stream)
 Traceback (most recent call last):
   ...
 riff.RiffChunkReadError: chunk size 3 < min size 4
->>>
-```
-
-```python
->>> riff.RiffChunk.read(io.BytesIO(b'RIFF\x04\x00\x00\x00TE'))
-Traceback (most recent call last):
-  ...
-riff.RiffChunkReadError: chunk format truncated
 >>>
 ```
