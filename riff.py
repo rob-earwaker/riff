@@ -1,3 +1,4 @@
+import io
 import struct
 
 
@@ -9,37 +10,154 @@ class RiffChunkReadError(ChunkReadError):
     pass
 
 
-class ChunkData:
-    def __init__(self, stream, startpos, size):
+class ChunkData(io.RawIOBase):
+    def __init__(self, stream, size, startpos):
         self._stream = stream
-        self._startpos = startpos
         self._size = size
+        self._startpos = startpos
+        self._position = 0
+        self._closed = False
+
+    def __repr__(self):
+        return 'riff.ChunkData(size={0})'.format(self.size)
+
+    def close(self):
+        if not self.closed:
+            self._closed = True
+
+    @property
+    def closed(self):
+        return self._closed or self._stream.closed
+
+    @classmethod
+    def create(cls, stream, size):
+        startpos = stream.tell() if stream.seekable() else None
+        return cls(stream, size, startpos)
+
+    def fileno(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return self._stream.fileno()
+
+    def isatty(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return self._stream.isatty()
+
+    def read(self, size=-1):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        if size < 0:
+            return self.readall()
+        size = min(size, self.size - self.tell())
+        bytestr = self._stream.read(size)
+        if bytestr is not None:
+            if len(bytestr) == 0 and size != 0:
+                raise ChunkReadError('chunk data truncated')
+            self._position += len(bytestr)
+        return bytestr
+
+    def readable(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return self._stream.readable()
+
+    def readall(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        bytestr = b''
+        while self.tell() < self.size:
+            size = self.size - self.tell()
+            readbytes += self.read(size)
+            if readbytes is None:
+                continue
+            bytestr += readbytes
+        return bytestr
+
+    def readinto(b):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        raise NotImplemented
+
+    def readline(self, size=-1):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        size = min(size, self.size - self.tell())
+        line = self._stream.readline(size)
+        if len(line) == 0 and size != 0:
+            raise ChunkReadError('chunk data truncated')
+        self._position += len(line)
+        return line
+
+    def readlines(self, hint=-1):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        hint = self.size if hint < 0 else min(hint, self.size)
+        lines = []
+        while sum(map(len, lines)) < hint:
+            lines.append(self.readline())
+        return lines
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        if not whence in [io.SEEK_SET, io.SEEK_CUR, io.SEEK_END]:
+            raise ValueError(
+                'invalid whence ({0}, should be {1}, {2} or {3})'.format(
+                    whence, io.SEEK_SET, io.SEEK_CUR, io.SEEK_END
+                )
+            )
+        if not self.seekable():
+            raise OSError('chunk data is not seekable')
+        streampos = self._stream.tell()
+        currentpos = self._startpos + self.tell()
+        endpos = self._startpos + self.size
+        offset = {
+            io.SEEK_SET: lambda: self._startpos - streampos + offset,
+            io.SEEK_CUR: lambda: currentpos - streampos + offset,
+            io.SEEK_END: lambda: endpos - streampos + offset
+        }[whence]()
+        offset = min(max(offset, self._startpos), endpos)
+        streampos = self._stream.seek(offset, io.SEEK_SET)
+        if streampos < offset:
+            raise ChunkReadError('chunk data truncated')
+        self._position = streampos - self._startpos
+        return self.tell()
+
+    def seekable(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return self._stream.seekable()
 
     @property
     def size(self):
         return self._size
 
-    @classmethod
-    def create(cls, stream, size):
-        startpos = stream.tell()
-        return cls(stream, startpos, size)
-
-    def tell(self):
-        return self._stream.tell() - self._startpos
-
-    def read(self, size):
-        size = min(size, self._size - self.tell())
-        bytestr = self._stream.read(size)
-        if len(bytestr) < size:
-            raise ChunkReadError('chunk data truncated')
-        return bytestr
-
     def skip(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
         endpos = self._startpos + self.size + self.size % 2
         self._stream.seek(endpos)
 
-    def __repr__(self):
-        return 'riff.ChunkData(size={0})'.format(self.size)
+    def tell(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return self._position
+
+    def truncate(self, size=None):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        raise OSError('chunk data is read-only')
+
+    def writable(self):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        return False
+
+    def writelines(self, lines):
+        if self.closed:
+            raise ChunkReadError('chunk data closed')
+        raise OSError('chunk data is read-only')
 
 
 class Chunk:
@@ -102,7 +220,7 @@ class RiffChunk:
     @classmethod
     def read(cls, stream):
         chunk = Chunk.read(stream)
-        if not chunk.id == cls.ID:
+        if chunk.id != cls.ID:
             raise RiffChunkReadError(
                 "chunk id '{0}' != '{1}'".format(chunk.id, cls.ID)
             )
@@ -112,12 +230,10 @@ class RiffChunk:
                     chunk.size, cls.MIN_CHUNK_SIZE
                 )
             )
-
         bytestr = chunk.data.read(cls.FORMAT_STRUCT.size)
         if len(bytestr) < cls.FORMAT_STRUCT.size:
             raise RiffChunkReadError('chunk format truncated')
         format = cls.FORMAT_STRUCT.unpack(bytestr)[0].decode('ascii')
-
         return cls(chunk.size, format)
 
     def __repr__(self):

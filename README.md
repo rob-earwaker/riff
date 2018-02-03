@@ -69,8 +69,8 @@ The `riff.ChunkData` type represents a RIFF-formatted chunk's data as a stream-l
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
 >>> chunk = riff.Chunk.read(stream)
->>> chunk.data.size
-8
+>>> chunk.data
+riff.ChunkData(size=8)
 >>> chunk.data.tell()
 0
 >>> chunk.data.read(4)
@@ -82,7 +82,9 @@ b'Data'
 >>>
 ```
 
-The chunk data stream will prevent you reading beyond the number of bytes specified by the chunk size, even if the source stream contains more data.
+The `riff.ChunkData` type provides a window over a section of the input stream object, where the window starts at the stream position corresponding to the start of the chunk's data and ends after the final byte of chunk data. Note that the end of the chunk data will not necessarily correspond to the end of the input stream, but the `riff.ChunkData` object will still behave as if it had reached the EOF.
+
+A `riff.ChunkData` object has the same interface as a read-only [io.RawIOBase](https://docs.python.org/library/io.html#io.RawIOBase) object. It will delegate to the corresponding methods on the input stream in most cases, with additional constraints imposed by the chunk data's start and end positions.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
@@ -95,6 +97,37 @@ b'TestData'
 b''
 >>> chunk.data.tell()
 8
+>>>
+```
+
+Note that closing the chunk data stream does not close the input stream, but the `riff.ChunkData` object itself will still behave as if closed. If the input stream is closed, the `riff.ChunkData` object will also behave as if closed.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.closed
+False
+>>> chunk.data.read(4)
+b'Test'
+>>> chunk.data.close()
+>>> chunk.data.closed
+True
+>>> chunk.data.read(4)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: chunk data closed
+>>>
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.read(4)
+b'Test'
+>>> stream.close()
+>>> chunk.data.closed
+True
+>>> chunk.data.read(4)
+Traceback (most recent call last):
+  ...
+riff.ChunkReadError: chunk data closed
 >>>
 ```
 
@@ -138,7 +171,7 @@ b'ExtraData'
 Trying to read a chunk with truncated data.
 
 ```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDa')
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00Test')
 >>> chunk = riff.Chunk.read(stream)
 >>> chunk.data.read(4)
 b'Test'
@@ -148,8 +181,6 @@ Traceback (most recent call last):
 riff.ChunkReadError: chunk data truncated
 >>>
 ```
-
-## `riff.read_chunks`
 
 ## `riff.RiffChunk`
 
