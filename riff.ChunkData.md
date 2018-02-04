@@ -82,7 +82,31 @@ ValueError: chunk data closed
 
 ## [`<riff.ChunkData>.closed`](riff.ChunkData.md#riffchunkdataclosed)
 
-Not yet documented.
+The `closed` propety of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object indicates whether the data stream has been closed using the [`<riff.ChunkData>.close`](riff.ChunkData.md#riffchunkdataclose) method.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.closed
+False
+>>> chunk.data.close()
+>>> chunk.data.closed
+True
+>>>
+```
+
+The [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object will also show as closed if the input stream is closed.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> chunk = riff.Chunk.read(stream)
+>>> stream.close()
+>>> chunk.data.closed
+True
+>>>
+```
 
 
 ## [`<riff.ChunkData>.fileno`](riff.ChunkData.md#riffchunkdatafileno)
