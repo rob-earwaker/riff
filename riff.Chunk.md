@@ -16,6 +16,7 @@ The [`riff.Chunk`](riff.Chunk.md#riffchunk) class has the following properties a
 - [`<riff.Chunk>.data`](riff.Chunk.md#riffchunkdata)
 - [`<riff.Chunk>.size`](riff.Chunk.md#riffchunksize)
 
+
 ## [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
 
 The recommended way to create a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
@@ -56,6 +57,7 @@ riff.ChunkReadError: header truncated
 >>>
 ```
 
+
 ## [`<riff.Chunk>.id`](riff.Chunk.md#riffchunkid)
 
 The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance gives the 4-character ASCII string that identifies the chunk type.
@@ -68,6 +70,7 @@ The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance gives th
 >>>
 ```
 
+
 ## [`<riff.Chunk>.data`](riff.Chunk.md#riffchunkdata)
 
 The `data` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance exposes the chunk's data as a stream-like [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object, which has size equal to the chunk size.
@@ -79,6 +82,7 @@ The `data` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance expose
 riff.ChunkData(size=8)
 >>>
 ```
+
 
 ## [`<riff.Chunk>.size`](riff.Chunk.md#riffchunksize)
 

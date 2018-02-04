@@ -36,17 +36,22 @@ class ChunkData(io.RawIOBase):
 
     def fileno(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return self._stream.fileno()
+
+    def flush(self):
+        if self.closed:
+            raise ValueError('chunk data closed')
+        pass
 
     def isatty(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return self._stream.isatty()
 
     def read(self, size=-1):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         if size < 0:
             return self.readall()
         size = min(size, self.size - self.tell())
@@ -59,12 +64,12 @@ class ChunkData(io.RawIOBase):
 
     def readable(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return self._stream.readable()
 
     def readall(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         bytestr = b''
         while self.tell() < self.size:
             size = self.size - self.tell()
@@ -74,14 +79,14 @@ class ChunkData(io.RawIOBase):
             bytestr += readbytes
         return bytestr
 
-    def readinto(b):
+    def readinto(self, b):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         raise NotImplemented
 
     def readline(self, size=-1):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         size = min(size, self.size - self.tell())
         line = self._stream.readline(size)
         if len(line) == 0 and size != 0:
@@ -91,7 +96,7 @@ class ChunkData(io.RawIOBase):
 
     def readlines(self, hint=-1):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         hint = self.size if hint < 0 else min(hint, self.size)
         lines = []
         while sum(map(len, lines)) < hint:
@@ -100,7 +105,7 @@ class ChunkData(io.RawIOBase):
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         if not whence in [io.SEEK_SET, io.SEEK_CUR, io.SEEK_END]:
             raise ValueError(
                 'invalid whence ({0}, should be {1}, {2} or {3})'.format(
@@ -126,7 +131,7 @@ class ChunkData(io.RawIOBase):
 
     def seekable(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return self._stream.seekable()
 
     @property
@@ -135,28 +140,33 @@ class ChunkData(io.RawIOBase):
 
     def skip(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         endpos = self._startpos + self.size + self.size % 2
         self._stream.seek(endpos)
 
     def tell(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return self._position
 
     def truncate(self, size=None):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         raise OSError('chunk data is read-only')
 
     def writable(self):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         return False
+
+    def write(self, b):
+        if self.closed:
+            raise ValueError('chunk data closed')
+        raise OSError('chunk data is read-only')
 
     def writelines(self, lines):
         if self.closed:
-            raise ChunkReadError('chunk data closed')
+            raise ValueError('chunk data closed')
         raise OSError('chunk data is read-only')
 
 
