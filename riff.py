@@ -145,6 +145,8 @@ class ChunkData(io.RawIOBase):
     def skip(self):
         if self.closed:
             raise ValueError('chunk data closed')
+        if not self.seekable():
+            raise OSError('chunk data is not seekable')
         endpos = self._startpos + self.size + self.size % 2
         self._stream.seek(endpos)
 

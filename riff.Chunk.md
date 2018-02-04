@@ -19,7 +19,7 @@ The [`riff.Chunk`](riff.Chunk.md#riffchunk) class has the following properties a
 
 ## [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
 
-The recommended way to create a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
+The recommended way to create a [`riff.Chunk`](riff.Chunk.md#riffchunk) object. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
 
 ```python
 >>> import io
@@ -60,7 +60,7 @@ riff.ChunkReadError: header truncated
 
 ## [`<riff.Chunk>.id`](riff.Chunk.md#riffchunkid)
 
-The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance gives the 4-character ASCII string that identifies the chunk type.
+The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the 4-character ASCII string that identifies the chunk type.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
@@ -73,7 +73,7 @@ The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance gives th
 
 ## [`<riff.Chunk>.data`](riff.Chunk.md#riffchunkdata)
 
-The `data` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance exposes the chunk's data as a stream-like [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object, which has size equal to the chunk size.
+The `data` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object exposes the chunk's data as a stream-like [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object, which has size equal to the chunk size.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
@@ -86,7 +86,7 @@ riff.ChunkData(size=8)
 
 ## [`<riff.Chunk>.size`](riff.Chunk.md#riffchunksize)
 
-The `size` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance gives the number of bytes of data the chunk contains. This value does not include the 8 byte header, or the pad byte (if applicable).
+The `size` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the number of bytes of data the chunk contains. This value does not include the 8 byte header, or the pad byte (if applicable).
 
 ```python
 >>> bytes = b'TEST\x08\x00\x00\x00TestData'#

@@ -162,7 +162,22 @@ Not yet documented.
 
 ## [`<riff.ChunkData>.size`](riff.ChunkData.md#riffchunkdatasize)
 
-Not yet documented.
+The `size` property of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object gives the size in bytes of the data stream. Unlike in a typical IO stream, the size is known because it is provided by the chunk's header. Note that the size does not include the pad byte (if applicable).
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.size
+8
+>>>
+>>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.size
+7
+>>>
+```
 
 
 ## [`<riff.ChunkData>.skip`](riff.ChunkData.md#riffchunkdataskip)
@@ -202,6 +217,18 @@ b'ExtraData'
 >>>
 ```
 
+For non-seekable input streams this method will raise an [`OSError`](https://docs.python.org/library/exceptions.html#OSError).
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> stream.seekable = lambda: False
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.skip()
+Traceback (most recent call last):
+  ...
+OSError: chunk data is not seekable
+>>>
+```
 
 
 ## [`<riff.ChunkData>.tell`](riff.ChunkData.md#riffchunkdatatell)
