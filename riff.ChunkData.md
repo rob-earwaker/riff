@@ -34,7 +34,9 @@ As well as those defined by the [`io.RawIOBase`](https://docs.python.org/library
 Calling the `close` method on a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object prevents further stream operations from being performed. Operations called subsequently will raise a [`ValueError`](https://docs.python.org/library/exceptions.html#ValueError).
 
 ```python
+>>> import io
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
 >>> chunk = riff.Chunk.read(stream)
 >>> chunk.data.read(4)
 b'Test'
@@ -72,7 +74,7 @@ b'Test'
 >>> chunk.data.read(4)
 Traceback (most recent call last):
   ...
-riff.ChunkReadError: chunk data closed
+ValueError: chunk data closed
 >>>
 ```
 
