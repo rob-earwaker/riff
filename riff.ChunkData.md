@@ -267,7 +267,19 @@ Not yet documented.
 
 ## [`<riff.ChunkData>.writable`](riff.ChunkData.md#riffchunkdatawritable)
 
-Not yet documented.
+A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object is a read-only stream, so the `writable` method always returns `False`, regardless of whether the input stream is writable.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> stream.writable()
+True
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.writable()
+False
+>>>
+```
 
 
 ## [`<riff.ChunkData>.write`](riff.ChunkData.md#riffchunkdatawrite)
