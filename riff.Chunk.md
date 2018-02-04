@@ -1,4 +1,4 @@
-# [`riff`](README.md#riff).Chunk
+# [`riff`](README.md#riff)`.Chunk`
 
 The [`riff.Chunk`](riff.Chunk.md#riffchunk) type represents a RIFF-formatted chunk, which consists of the following elements:
 
