@@ -111,17 +111,47 @@ True
 
 ## [`<riff.ChunkData>.fileno`](riff.ChunkData.md#riffchunkdatafileno)
 
-Not yet documented.
+The `fileno` method of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object delegates to the corresponding method of the input stream.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> stream.fileno = lambda: 12345
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.fileno()
+12345
+>>>
+```
 
 
 ## [`<riff.ChunkData>.flush`](riff.ChunkData.md#riffchunkdataflush)
 
-Not yet documented.
+The [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object is intended to behave like a read-only stream, so the `flush` method will not do anything, even if the input stream is writable.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.flush()
+>>>
+```
 
 
 ## [`<riff.ChunkData>.isatty`](riff.ChunkData.md#riffchunkdataisatty)
 
-Not yet documented.
+The `isatty` method of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object delegates to the corresponding method of the input stream.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.isatty()
+False
+>>>
+```
 
 
 ## [`<riff.ChunkData>.padded`](riff.ChunkData.md#riffchunkdatapadded)
@@ -181,7 +211,17 @@ Not yet documented.
 
 ## [`<riff.ChunkData>.seekable`](riff.ChunkData.md#riffchunkdataseekable)
 
-Not yet documented.
+The `seekable` method of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object delegates to the corresponding method of the input stream.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.seekable()
+True
+>>>
+```
 
 
 ## [`<riff.ChunkData>.size`](riff.ChunkData.md#riffchunkdatasize)
@@ -257,12 +297,51 @@ OSError: chunk data is not seekable
 
 ## [`<riff.ChunkData>.tell`](riff.ChunkData.md#riffchunkdatatell)
 
-Not yet documented.
+The `tell` method of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object gives the position of the cursor within the chunk, relative to the start of the data.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> stream.tell()
+8
+>>> chunk.data.tell()
+0
+>>> chunk.data.read(4)
+b'Test'
+>>> chunk.data.tell()
+4
+>>>
+```
+
+Unlike most non-seekable streams, the [`<riff.ChunkData>.tell`](riff.ChunkData.md#riffchunkdatatell) method will not raise an exception if the stream is not seekable.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> stream.seekable = lambda: False
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.tell()
+0
+>>>
+```
 
 
 ## [`<riff.ChunkData>.truncate`](riff.ChunkData.md#riffchunkdatatruncate)
 
-Not yet documented.
+A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object is a read-only stream, so the `truncate` method will always raise an [`OSError`](https://docs.python.org/library/exceptions.html#OSError), regardless of whether the input stream is writable.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.truncate(4)
+Traceback (most recent call last):
+  ...
+OSError: chunk data is read-only
+>>>
+```
 
 
 ## [`<riff.ChunkData>.writable`](riff.ChunkData.md#riffchunkdatawritable)
@@ -284,9 +363,33 @@ False
 
 ## [`<riff.ChunkData>.write`](riff.ChunkData.md#riffchunkdatawrite)
 
-Not yet documented.
+A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object is a read-only stream, so the `write` method will always raise an [`OSError`](https://docs.python.org/library/exceptions.html#OSError), regardless of whether the input stream is writable.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.write(b'NewData')
+Traceback (most recent call last):
+  ...
+OSError: chunk data is read-only
+>>>
+```
 
 
 ## [`<riff.ChunkData>.writelines`](riff.ChunkData.md#riffchunkdatawritelines)
 
-Not yet documented.
+A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object is a read-only stream, so the `writelines` method will always raise an [`OSError`](https://docs.python.org/library/exceptions.html#OSError), regardless of whether the input stream is writable.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.writelines([b'New\n', b'Data\n'])
+Traceback (most recent call last):
+  ...
+OSError: chunk data is read-only
+>>>
+```
