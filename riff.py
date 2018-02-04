@@ -49,6 +49,10 @@ class ChunkData(io.RawIOBase):
             raise ValueError('chunk data closed')
         return self._stream.isatty()
 
+    @property
+    def padded(self):
+        return self.size % 2 == 1
+
     def read(self, size=-1):
         if self.closed:
             raise ValueError('chunk data closed')

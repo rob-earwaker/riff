@@ -25,6 +25,7 @@ A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object has the same interf
 
 As well as those defined by the [`io.RawIOBase`](https://docs.python.org/library/io.html#io.RawIOBase) interface, a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object defines the following additional properties and methods:
 
+- [`<riff.ChunkData>.padded`](riff.ChunkData.md#riffchunkdatapadded)
 - [`<riff.ChunkData>.size`](riff.ChunkData.md#riffchunkdatasize)
 - [`<riff.ChunkData>.skip`](riff.ChunkData.md#riffchunkdataskip)
 
@@ -99,6 +100,26 @@ Not yet documented.
 Not yet documented.
 
 
+## [`<riff.ChunkData>.padded`](riff.ChunkData.md#riffchunkdatapadded)
+
+The `padded` property of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object indicates whether the chunk requires a pad byte at the end of the data block. This will be `True` if the chunk size is odd, and `False` if the chunk size is even.
+
+```python
+>>> import io
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> import riff
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.padded
+False
+>>>
+>>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.padded
+True
+>>>
+```
+
+
 ## [`<riff.ChunkData>.read`](riff.ChunkData.md#riffchunkdataread)
 
 Not yet documented.
@@ -146,7 +167,41 @@ Not yet documented.
 
 ## [`<riff.ChunkData>.skip`](riff.ChunkData.md#riffchunkdataskip)
 
-Not yet documented.
+The `skip` method of a [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object moves the cursor to the end of the chunk data stream.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
+Data is skipped from the current position within the chunk data, so will work after reading all or part of the chunk's data.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.read(4)
+b'Test'
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
+Skipping will also skip over the chunk's pad byte if the chunk has an odd number of bytes.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00ExtraData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.data.skip()
+>>> stream.read(9)
+b'ExtraData'
+>>>
+```
+
 
 
 ## [`<riff.ChunkData>.tell`](riff.ChunkData.md#riffchunkdatatell)
@@ -172,78 +227,3 @@ Not yet documented.
 ## [`<riff.ChunkData>.writelines`](riff.ChunkData.md#riffchunkdatawritelines)
 
 Not yet documented.
-
-
-
-```python
->>> import io
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
->>> import riff
->>> chunk = riff.Chunk.read(stream)
->>> chunk.data
-riff.ChunkData(size=8)
->>> chunk.data.read(8)
-b'TestData'
->>> stream.tell()
-16
->>> chunk.data.tell()
-8
->>> chunk.data.read(9)
-b''
->>> stream.tell()
-16
->>> chunk.data.tell()
-8
->>>
-```
-
-A chunk's data can be skipped to move the stream position to the end of the data stream.
-
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
->>> chunk = riff.Chunk.read(stream)
->>> chunk.data.skip()
->>> stream.read(9)
-b'ExtraData'
->>>
-```
-
-Data is skipped from the current position of the chunk data stream, so will work after reading all or part of the chunk's data.
-
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
->>> chunk = riff.Chunk.read(stream)
->>> chunk.data.read(4)
-b'Test'
->>> chunk.data.skip()
->>> stream.read(9)
-b'ExtraData'
->>>
-```
-
-Skipping will also skip over the chunk's pad byte if the chunk has an odd number of bytes.
-
-```python
->>> stream = io.BytesIO(b'TEST\x07\x00\x00\x00OddData\x00ExtraData')
->>> chunk = riff.Chunk.read(stream)
->>> chunk.data.skip()
->>> stream.read(9)
-b'ExtraData'
->>>
-```
-
-## Exceptions
-
-Trying to read a chunk with truncated data.
-
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00Test')
->>> chunk = riff.Chunk.read(stream)
->>> chunk.data.read(4)
-b'Test'
->>> chunk.data.read(4)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: chunk data truncated
->>>
-```
