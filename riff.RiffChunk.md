@@ -1,7 +1,10 @@
 # `riff.RiffChunk`
 
 ```python
+>>> import io
 >>> stream = io.BytesIO(b'RIFF\x04\x00\x00\x00TEST')
+>>>
+>>> import riff
 >>> riff.RiffChunk.read(stream)
 riff.RiffChunk(size=4, format='TEST')
 >>> stream.tell()

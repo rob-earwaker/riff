@@ -1,11 +1,13 @@
-# `riff.ChunkData`
+# [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata)
 
-The `riff.ChunkData` type provides a window over a section of the input stream object, where the window starts at the stream position corresponding to the start of the chunk's data and ends after the final byte of chunk data. Note that the end of the chunk data will not necessarily correspond to the end of the input stream, but the `riff.ChunkData` object will still behave as if it had reached the EOF.
+The [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) type provides a window over a section of the input stream object, where the window starts at the stream position corresponding to the start of the chunk's data and ends after the final byte of chunk data. Note that the end of the chunk data will not necessarily correspond to the end of the input stream, but the [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object will still behave as if it had reached the EOF.
 
-A `riff.ChunkData` object has the same interface as a read-only [`io.RawIOBase`](https://docs.python.org/library/io.html#io.RawIOBase) object. It will delegate to the corresponding methods on the input stream in most cases, with additional constraints imposed by the chunk data's start and end positions.
+A [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object has the same interface as a read-only [`io.RawIOBase`](https://docs.python.org/library/io.html#io.RawIOBase) object. It will delegate to the corresponding methods on the input stream in most cases, with additional constraints imposed by the chunk data's start and end positions.
 
 ```python
+>>> import io
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestDataExtraData')
+>>> import riff
 >>> chunk = riff.Chunk.read(stream)
 >>> chunk.data
 riff.ChunkData(size=8)
@@ -24,7 +26,7 @@ b''
 >>>
 ```
 
-Note that closing the chunk data stream does not close the input stream, but the `riff.ChunkData` object itself will still behave as if closed.
+Note that closing the chunk data stream does not close the input stream, but the [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object itself will still behave as if closed.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
@@ -43,7 +45,7 @@ riff.ChunkReadError: chunk data closed
 >>>
 ```
 
-If the input stream is closed, the `riff.ChunkData` object will also behave as if closed.
+If the input stream is closed, the [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object will also behave as if closed.
 
 ```python
 >>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
