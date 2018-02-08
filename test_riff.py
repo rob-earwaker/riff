@@ -63,13 +63,13 @@ class Test_Chunk_consumed(TestCase):
         chunk.data.skip(4)
         self.assertFalse(chunk.consumed)
 
-    def test_False_if_pad_expected_and_not_consumed(self):
+    def test_False_if_pad_byte_expected_and_not_consumed(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
         self.assertFalse(chunk.consumed)
 
-    def test_False_if_pad_not_expected_and_not_consumed(self):
+    def test_False_if_pad_byte_not_expected_and_not_consumed(self):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.skipall()
@@ -86,28 +86,28 @@ class Test_Chunk_consumed(TestCase):
         chunk.data.skipall()
         self.assertTrue(chunk.consumed)
 
-    def test_True_if_data_consumed_and_pad_expected_and_read(self):
+    def test_True_if_data_consumed_and_pad_byte_expected_and_read(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
         chunk.readpad()
         self.assertTrue(chunk.consumed)
 
-    def test_True_if_data_consumed_and_pad_not_expected_and_read(self):
+    def test_True_if_data_consumed_and_pad_byte_not_expected_and_read(self):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.skipall()
         chunk.readpad()
         self.assertTrue(chunk.consumed)
 
-    def test_True_if_data_consumed_and_pad_expected_and_skipped(self):
+    def test_True_if_data_consumed_and_pad_byte_expected_and_skipped(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
         chunk.skippad()
         self.assertTrue(chunk.consumed)
 
-    def test_True_if_data_consumed_and_pad_not_expected_and_skipped(self):
+    def test_True_if_data_consumed_and_pad_byte_not_expected_and_skipped(self):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.skipall()
@@ -137,6 +137,28 @@ class Test_Chunk_id(TestCase):
         stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
         chunk = riff.Chunk.readfrom(stream)
         self.assertEqual('MOCK', chunk.id)
+
+
+class Test_Chunk_padded(TestCase):
+    def test_True_if_size_odd_and_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertTrue(chunk.padded)
+
+    def test_True_if_size_odd_and_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertTrue(chunk.padded)
+
+    def test_False_if_size_even_and_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertFalse(chunk.padded)
+
+    def test_False_if_size_even_and_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertFalse(chunk.padded)
 
 
 if __name__ == '__main__':

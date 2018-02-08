@@ -70,18 +70,18 @@ class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
     PAD_SIZE = 1
 
-    def __init__(self, id, data, stream, expectpad):
+    def __init__(self, id, data, stream, expectpadbyte):
         self._id = id
         self._data = data
         self._stream = stream
-        self._expectpad = expectpad
+        self._expectpadbyte = expectpadbyte
         self._padconsumed = False
         self._position = 0
 
     @classmethod
     def create(cls, id, size, datastream):
         data = ChunkData(datastream, size)
-        return cls(id, data, stream=datastream, expectpad=False)
+        return cls(id, data, stream=datastream, expectpadbyte=False)
 
     @classmethod
     def readfrom(cls, stream):
@@ -94,7 +94,7 @@ class Chunk:
         except UnicodeDecodeError as error:
             raise Error('chunk id not ascii-decodable') from error
         data = ChunkData(stream, size)
-        return cls(id, data, stream, expectpad=True)
+        return cls(id, data, stream, expectpadbyte=True)
 
     @property
     def consumed(self):
@@ -121,7 +121,7 @@ class Chunk:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
             return b''
-        if not self._expectpad:
+        if not self._expectpadbyte:
             padbyte = b'\x00'
         else:
             padbyte = self._stream.read(self.PAD_SIZE)
@@ -143,7 +143,7 @@ class Chunk:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
             return
-        if self._expectpad:
+        if self._expectpadbyte:
             try:
                 self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
             except (AttributeError, OSError) as error:
