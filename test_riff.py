@@ -15,9 +15,14 @@ class Test_Chunk_create(TestCase):
         chunk = riff.Chunk.create('MOCK', 8, datastream)
         self.assertIsInstance(chunk, riff.Chunk)
 
-    def test_does_not_raise_with_empty_data_stream(self):
+    def test_no_error_with_empty_data_stream(self):
         datastream = io.BytesIO(b'')
         riff.Chunk.create('MOCK', 0, datastream)
+
+    def test_does_not_read_data_stream(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(0, datastream.tell())
 
 
 class Test_Chunk_readfrom(TestCase):
@@ -26,7 +31,7 @@ class Test_Chunk_readfrom(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         self.assertIsInstance(chunk, riff.Chunk)
 
-    def test_with_empty_chunk(self):
+    def test_no_error_with_empty_chunk(self):
         stream = io.BytesIO(b'MOCK\x00\x00\x00\x00')
         riff.Chunk.readfrom(stream)
 
@@ -35,17 +40,17 @@ class Test_Chunk_readfrom(TestCase):
         riff.Chunk.readfrom(stream)
         self.assertEqual(8, stream.tell())
 
-    def test_raises_when_id_truncated(self):
+    def test_error_when_id_truncated(self):
         stream = io.BytesIO(b'MOC')
         with self.assertRaisesError('chunk header truncated'):
             riff.Chunk.readfrom(stream)
 
-    def test_raises_when_size_truncated(self):
+    def test_error_when_size_truncated(self):
         stream = io.BytesIO(b'MOCK\x08\x00')
         with self.assertRaisesError('chunk header truncated'):
             riff.Chunk.readfrom(stream)
 
-    def test_raises_when_id_not_ascii(self):
+    def test_error_when_id_not_ascii(self):
         stream = io.BytesIO(b'M\xffCK\x08\x00\x00\x00MockData')
         with self.assertRaisesError('chunk id not ascii-decodable'):
             riff.Chunk.readfrom(stream)
@@ -120,6 +125,18 @@ class Test_Chunk_data(TestCase):
         stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
         chunk = riff.Chunk.readfrom(stream)
         self.assertIsInstance(chunk.data, riff.ChunkData)
+
+
+class Test_Chunk_id(TestCase):
+    def test_value_after_creating_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual('MOCK', chunk.id)
+
+    def test_value_after_reading_chunk_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual('MOCK', chunk.id)
 
 
 if __name__ == '__main__':
