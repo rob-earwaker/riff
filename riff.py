@@ -109,6 +109,10 @@ class Chunk:
     def id(self):
         return self._id
 
+    @property
+    def padded(self):
+        return self.size % 2 != 0
+
     def readover(self, buffersize=1024):
         self.data.readoverall(buffersize)
         self.readpad()
@@ -116,11 +120,14 @@ class Chunk:
     def readpad(self):
         if not self.data.consumed:
             raise Error('not all chunk data has been consumed')
-        if not self._expectpad or self._padconsumed:
+        if not self.padded or self._padconsumed:
             return b''
-        padbyte = self._stream.read(self.PAD_SIZE)
-        if len(padbyte) < self.PAD_SIZE:
-            raise Error('chunk truncated - expected pad byte')
+        if not self._expectpad
+            padbyte = b'\x00'
+        else:
+            padbyte = self._stream.read(self.PAD_SIZE)
+            if len(padbyte) < self.PAD_SIZE:
+                raise Error('chunk truncated - expected pad byte')
         self._padconsumed = True
         return padbyte
 
@@ -150,9 +157,8 @@ class Chunk:
         headerbytes = self.HEADER_STRUCT.pack(idbytes, self.size)
         stream.write(headerbytes)
         self.data.writeto(stream, buffersize)
-        padded = self.size % 2 != 0
-        if padded:
-            padbyte = self.readpad() if self._expectpad else b'\x00'
+        if self.padded:
+            padbyte = self.readpad()
             stream.write(padbyte)
 
     def __repr__(self):

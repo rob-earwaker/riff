@@ -19,6 +19,7 @@ Both of these methods return a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance 
 - [`{riff.Chunk}.consumed`](riff.Chunk.md#riffchunkconsumed)
 - [`{riff.Chunk}.data`](riff.Chunk.md#riffchunkdata)
 - [`{riff.Chunk}.id`](riff.Chunk.md#riffchunkid)
+- [`{riff.Chunk}.padded`](riff.Chunk.md#riffchunkpadded)
 - [`{riff.Chunk}.readover`](riff.Chunk.md#riffchunkreadover)
 - [`{riff.Chunk}.readpad`](riff.Chunk.md#riffchunkreadpad)
 - [`{riff.Chunk}.size`](riff.Chunk.md#riffchunksize)
@@ -82,6 +83,11 @@ The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the 
 'TEST'
 >>>
 ```
+
+
+## [`{riff.Chunk}.padded`](riff.Chunk.md#riffchunkpadded)
+
+Not yet documented.
 
 
 ## [`{riff.Chunk}.readover`](riff.Chunk.md#riffchunkreadover)
