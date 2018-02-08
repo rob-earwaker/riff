@@ -16,6 +16,10 @@ class ChunkData:
         return 'riff.ChunkData(size={0})'.format(self.size)
 
     @property
+    def consumed(self):
+        return self.position == self.size
+
+    @property
     def position(self):
         return self._position
 
@@ -64,12 +68,14 @@ class ChunkData:
 
 class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
+    PAD_SIZE = 1
 
     def __init__(self, id, data, stream, expectpad):
         self._id = id
         self._data = data
         self._stream = stream
         self._expectpad = expectpad
+        self._padconsumed = False
         self._position = 0
 
     @classmethod
@@ -91,47 +97,55 @@ class Chunk:
         return cls(id, data, stream, expectpad=True)
 
     @property
-    def id(self):
-        return self._id
+    def consumed(self):
+        padconsumed = not self._expectpad or self._padconsumed
+        return self.data.consumed and padconsumed
 
     @property
     def data(self):
         return self._data
 
     @property
-    def size(self):
-        return self._data.size
+    def id(self):
+        return self._id
 
     def readover(self, buffersize=1024):
         self.data.readoverall(buffersize)
         self.readpad()
 
     def readpad(self):
-        if self.position != self.size:
-            raise Error('not all chunk data has been read')
-        if not self._expectpad:
+        if not self.data.consumed:
+            raise Error('not all chunk data has been consumed')
+        if not self._expectpad or self._padconsumed:
             return b''
-        padbyte = self._stream.read(1)
-        if len(padbyte) < 1:
+        padbyte = self._stream.read(self.PAD_SIZE)
+        if len(padbyte) < self.PAD_SIZE:
             raise Error('chunk truncated - expected pad byte')
+        self._padconsumed = True
         return padbyte
 
+    @property
+    def size(self):
+        return self.data.size
+
     def skip(self):
-        self._data.skipall()
+        self.data.skipall()
         self.skippad()
 
     def skippad(self):
         if self.position != self.size:
             raise Error('not all chunk data has been read')
-        if self._expectpad:
-            try:
-                self._stream.seek(offset, io.SEEK_CUR)
-            except (AttributeError, OSError) as error:
-                raise Error('chunk data stream is not seekable') from error
+        if not self._expectpad or self._padconsumed:
+            return
+        try:
+            self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
+        except (AttributeError, OSError) as error:
+            raise Error('chunk data stream is not seekable') from error
+        self._padconsumed = True
 
     def writeto(self, stream, buffersize=1024):
         if self.data.position != 0:
-            raise Error('chunk data partially read')
+            raise Error('chunk partially consumed')
         idbytes = self.id.encode('ascii')
         headerbytes = self.HEADER_STRUCT.pack(idbytes, self.size)
         stream.write(headerbytes)

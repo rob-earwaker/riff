@@ -1,6 +1,6 @@
 # [`riff.Chunk`](riff.Chunk.md#riffchunk)
 
-The [`riff.Chunk`](riff.Chunk.md#riffchunk) type represents a RIFF-formatted chunk, which consists of the following elements:
+A [`riff.Chunk`](riff.Chunk.md#riffchunk) instance represents a RIFF-formatted chunk, which consists of the following elements:
 
 | Element    | # Bytes    | Format                                                      |
 |------------|------------|-------------------------------------------------------------|
@@ -9,17 +9,32 @@ The [`riff.Chunk`](riff.Chunk.md#riffchunk) type represents a RIFF-formatted chu
 | Data       | {size}     | Varies, multi-byte integers are assumed to be little-endian |
 | Pad        | {size} % 2 | Any (only present if {size} is odd)                         |
 
-The [`riff.Chunk`](riff.Chunk.md#riffchunk) class has the following properties and methods:
+A [`riff.Chunk`](riff.Chunk.md#riffchunk) instance can be created using one of the following class methods:
 
-- [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
-- [`<riff.Chunk>.id`](riff.Chunk.md#riffchunkid)
-- [`<riff.Chunk>.data`](riff.Chunk.md#riffchunkdata)
-- [`<riff.Chunk>.size`](riff.Chunk.md#riffchunksize)
+- [`riff.Chunk.create`](riff.Chunk.md#riffchunkcreate)
+- [`riff.Chunk.readfrom`](riff.Chunk.md#riffchunkreadfrom)
+
+Both of these methods return a [`riff.Chunk`](riff.Chunk.md#riffchunk) instance with the following attributes:
+
+- [`{riff.Chunk}.consumed`](riff.Chunk.md#riffchunkconsumed)
+- [`{riff.Chunk}.data`](riff.Chunk.md#riffchunkdata)
+- [`{riff.Chunk}.id`](riff.Chunk.md#riffchunkid)
+- [`{riff.Chunk}.readover`](riff.Chunk.md#riffchunkreadover)
+- [`{riff.Chunk}.readpad`](riff.Chunk.md#riffchunkreadpad)
+- [`{riff.Chunk}.size`](riff.Chunk.md#riffchunksize)
+- [`{riff.Chunk}.skip`](riff.Chunk.md#riffchunkskip)
+- [`{riff.Chunk}.skippad`](riff.Chunk.md#riffchunkskippad)
+- [`{riff.Chunk}.writeto`](riff.Chunk.md#riffchunkwriteto)
 
 
-## [`riff.Chunk.read`](riff.Chunk.md#riffchunkread)
+## [`riff.Chunk.create`](riff.Chunk.md#riffchunkcreate)
 
-The recommended way to create a [`riff.Chunk`](riff.Chunk.md#riffchunk) object. It reads the chunk identifier and chunk size from a binary IO stream, but does not read beyond the header.
+Not yet documented.
+
+
+## [`riff.Chunk.readfrom`](riff.Chunk.md#riffchunkreadfrom)
+
+Reads a [`riff.Chunk`](riff.Chunk.md#riffchunk) object from a binary I/O stream. The [`riff.Chunk.readfrom`](riff.Chunk.md#riffchunkreadfrom) method only reads the chunk's header (8 bytes) from the stream. 
 
 ```python
 >>> import io
@@ -33,45 +48,17 @@ riff.Chunk(id='TEST', size=8)
 >>>
 ```
 
-A [`riff.ChunkReadError`](riff.ChunkReadError.md#riffchunkreaderror) will be raised in the following circumstances.
+The [`{riff.Chunk}.data`](riff.Chunk.md#riffchunkdata) property exposes the chunk's data, and the [`{riff.Chunk}.readpad`](riff.Chunk.md#riffchunkreadpad) method can be used to read the pad byte, if there is one. These attributes and the [`riff.Chunk.readfrom`](riff.Chunk.md#riffchunkreadfrom) method only use a single method on the input stream - `stream.read(size)`. This method is expected to return `size` bytes when called.
 
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
->>> stream.readable = lambda: False
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: stream is not readable
->>>
->>> stream = io.BytesIO(b'TES')
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: header truncated
->>>
->>> stream = io.BytesIO(b'TEST\x04\x00')
->>> riff.Chunk.read(stream)
-Traceback (most recent call last):
-  ...
-riff.ChunkReadError: header truncated
->>>
-```
+>IMPORTANT! While there is still unread chunk data (including the pad byte), the [`riff.Chunk`](riff.Chunk.md#riffchunk) object assumes the input stream is not being modified externally. Modifying the input stream before having read all of the 
 
 
-## [`<riff.Chunk>.id`](riff.Chunk.md#riffchunkid)
+## [`{riff.Chunk}.consumed`](riff.Chunk.md#riffchunkconsumed)
 
-The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the 4-character ASCII string that identifies the chunk type.
-
-```python
->>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
->>> chunk = riff.Chunk.read(stream)
->>> chunk.id
-'TEST'
->>>
-```
+Not yet documented.
 
 
-## [`<riff.Chunk>.data`](riff.Chunk.md#riffchunkdata)
+## [`{riff.Chunk}.data`](riff.Chunk.md#riffchunkdata)
 
 The `data` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object exposes the chunk's data as a stream-like [`riff.ChunkData`](riff.ChunkData.md#riffchunkdata) object, which has size equal to the chunk size.
 
@@ -84,7 +71,30 @@ riff.ChunkData(size=8)
 ```
 
 
-## [`<riff.Chunk>.size`](riff.Chunk.md#riffchunksize)
+## [`{riff.Chunk}.id`](riff.Chunk.md#riffchunkid)
+
+The `id` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the 4-character ASCII string that identifies the chunk type.
+
+```python
+>>> stream = io.BytesIO(b'TEST\x08\x00\x00\x00TestData')
+>>> chunk = riff.Chunk.read(stream)
+>>> chunk.id
+'TEST'
+>>>
+```
+
+
+## [`{riff.Chunk}.readover`](riff.Chunk.md#riffchunkreadover)
+
+Not yet documented.
+
+
+## [`{riff.Chunk}.readpad`](riff.Chunk.md#riffchunkreadpad)
+
+Not yet documented.
+
+
+## [`{riff.Chunk}.size`](riff.Chunk.md#riffchunksize)
 
 The `size` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives the number of bytes of data the chunk contains. This value does not include the 8 byte header, or the pad byte (if applicable).
 
@@ -106,3 +116,18 @@ The `size` property of a [`riff.Chunk`](riff.Chunk.md#riffchunk) object gives th
 7
 >>>
 ```
+
+
+## [`{riff.Chunk}.skip`](riff.Chunk.md#riffchunkskip)
+
+Not yet documented.
+
+
+## [`{riff.Chunk}.skippad`](riff.Chunk.md#riffchunkskippad)
+
+Not yet documented.
+
+
+## [`{riff.Chunk}.writeto`](riff.Chunk.md#riffchunkwriteto)
+
+Not yet documented.
