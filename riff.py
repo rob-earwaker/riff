@@ -122,7 +122,7 @@ class Chunk:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
             return b''
-        if not self._expectpad
+        if not self._expectpad:
             padbyte = b'\x00'
         else:
             padbyte = self._stream.read(self.PAD_SIZE)
