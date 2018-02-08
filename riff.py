@@ -92,14 +92,13 @@ class Chunk:
         try:
             id = idbytes.decode('ascii')
         except UnicodeDecodeError as error:
-            raise Error('chunk id not ASCII-decodable') from error
+            raise Error('chunk id not ascii-decodable') from error
         data = ChunkData(stream, size)
         return cls(id, data, stream, expectpad=True)
 
     @property
     def consumed(self):
-        padconsumed = not self._expectpad or self._padconsumed
-        return self.data.consumed and padconsumed
+        return self.data.consumed and (not self.padded or self._padconsumed)
 
     @property
     def data(self):
@@ -140,14 +139,15 @@ class Chunk:
         self.skippad()
 
     def skippad(self):
-        if self.position != self.size:
-            raise Error('not all chunk data has been read')
-        if not self._expectpad or self._padconsumed:
+        if not self.data.consumed:
+            raise Error('not all chunk data has been consumed')
+        if not self.padded or self._padconsumed:
             return
-        try:
-            self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
-        except (AttributeError, OSError) as error:
-            raise Error('chunk data stream is not seekable') from error
+        if self._expectpad:
+            try:
+                self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
+            except (AttributeError, OSError) as error:
+                raise Error('chunk data stream is not seekable') from error
         self._padconsumed = True
 
     def writeto(self, stream, buffersize=1024):
