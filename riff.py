@@ -25,9 +25,8 @@ class ChunkData:
         return self._size
 
     def read(self, size):
-        size = max(size, 0)
         size = min(size, self.size - self.position)
-        if size == 0:
+        if size <= 0:
             return b''
         bytestr = self._stream.read(size)
         self._position += len(bytestr)
@@ -52,8 +51,9 @@ class ChunkData:
         self.readover(size, buffersize)
 
     def skip(self, size):
-        offset = max(size, 0)
-        offset = min(offset, self.size - self.position)
+        offset = min(size, self.size - self.position)
+        if offset <= 0:
+            return
         try:
             self._stream.seek(offset, io.SEEK_CUR)
         except (AttributeError, OSError) as error:
