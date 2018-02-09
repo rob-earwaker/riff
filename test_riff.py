@@ -386,5 +386,46 @@ class Test_Chunk_skippadbyte(TestCase):
             chunk.skippadbyte()
 
 
+class Test_Chunk_writeto(TestCase):
+    def test_error_if_chunk_data_partially_consumed(self):
+        instream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(instream)
+        chunk.data.skip(4)
+        outstream = io.BytesIO()
+        with self.assertRaisesError('chunk partially consumed'):
+            chunk.writeto(outstream)
+
+    def test_read_then_write_preserves_bytes(self):
+        instream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x77')
+        chunk = riff.Chunk.readfrom(instream)
+        outstream = io.BytesIO()
+        chunk.writeto(outstream)
+        self.assertEqual(instream.getvalue(), outstream.getvalue())
+
+    def test_writes_created_unpadded_chunk(self):
+        datastream = io.BytesIO(b'Data')
+        chunk = riff.Chunk.create('MOCK', 4, datastream)
+        outstream = io.BytesIO()
+        chunk.writeto(outstream)
+        self.assertEqual(b'MOCK\x04\x00\x00\x00Data', outstream.getvalue())
+
+    def test_writes_zero_pad_byte_for_created_padded_chunk(self):
+        datastream = io.BytesIO(b'Odd')
+        chunk = riff.Chunk.create('MOCK', 3, datastream)
+        outstream = io.BytesIO()
+        chunk.writeto(outstream)
+        self.assertEqual(b'MOCK\x03\x00\x00\x00Odd\x00', outstream.getvalue())
+
+    def test_does_not_read_more_than_buffer_size_bytes_at_once(self):
+        instream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(instream)
+        instream.read = unittest.mock.Mock()
+        instream.read.side_effect = lambda size: b'\x00' * size
+        outstream = io.BytesIO()
+        chunk.writeto(outstream, buffersize=4)
+        read_sizes = [args[0] for args, _ in instream.read.call_args_list]
+        self.assertTrue(all(size <= 4 for size in read_sizes))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -65,6 +65,14 @@ class ChunkData:
         size = self.size - self.position
         self.skip(size)
 
+    def writeto(self, stream, buffersize=1024):
+        if self.position != 0:
+            raise Error('chunk data partially consumed')
+        while not self.consumed:
+            size = min(buffersize, self.size - self.position)
+            buffer = self.read(size)
+            stream.write(buffer)
+
 
 class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
