@@ -91,28 +91,28 @@ class Test_Chunk_consumed(TestCase):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
-        chunk.readpad()
+        chunk.readpadbyte()
         self.assertTrue(chunk.consumed)
 
     def test_True_if_data_consumed_and_pad_byte_not_expected_and_read(self):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.skipall()
-        chunk.readpad()
+        chunk.readpadbyte()
         self.assertTrue(chunk.consumed)
 
     def test_True_if_data_consumed_and_pad_byte_expected_and_skipped(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
-        chunk.skippad()
+        chunk.skippadbyte()
         self.assertTrue(chunk.consumed)
 
     def test_True_if_data_consumed_and_pad_byte_not_expected_and_skipped(self):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.skipall()
-        chunk.skippad()
+        chunk.skippadbyte()
         self.assertTrue(chunk.consumed)
 
 
@@ -195,6 +195,59 @@ class Test_Chunk_readover(TestCase):
         chunk.readover(buffersize=4)
         read_sizes = [args[0] for args, _ in stream.read.call_args_list]
         self.assertTrue(all(size <= 4 for size in read_sizes))
+
+
+class Test_Chunk_readpadbyte(TestCase):
+    def test_error_if_chunk_data_not_consumed(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(4)
+        with self.assertRaisesError('not all chunk data has been consumed'):
+            chunk.readpadbyte()
+
+    def test_no_pad_byte_if_not_padded(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        padbyte = chunk.readpadbyte()
+        self.assertEqual(b'', padbyte)
+
+    def test_no_pad_byte_if_pad_already_read(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        chunk.readpadbyte()
+        padbyte = chunk.readpadbyte()
+        self.assertEqual(b'', padbyte)
+
+    def test_no_pad_byte_if_pad_already_skipped(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        chunk.skippadbyte()
+        padbyte = chunk.readpadbyte()
+        self.assertEqual(b'', padbyte)
+
+    def test_zero_pad_byte_if_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skipall()
+        padbyte = chunk.readpadbyte()
+        self.assertEqual(b'\x00', padbyte)
+
+    def test_error_if_pad_byte_expected_but_not_present(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        with self.assertRaisesError('chunk truncated - expected pad byte'):
+            chunk.readpadbyte()
+
+    def test_reads_pad_byte_if_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x77')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        padbyte = chunk.readpadbyte()
+        self.assertEqual(b'\x77', padbyte)
 
 
 if __name__ == '__main__':

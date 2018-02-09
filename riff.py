@@ -114,9 +114,9 @@ class Chunk:
 
     def readover(self, buffersize=1024):
         self.data.readoverall(buffersize)
-        self.readpad()
+        self.readpadbyte()
 
-    def readpad(self):
+    def readpadbyte(self):
         if not self.data.consumed:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
@@ -136,9 +136,9 @@ class Chunk:
 
     def skip(self):
         self.data.skipall()
-        self.skippad()
+        self.skippadbyte()
 
-    def skippad(self):
+    def skippadbyte(self):
         if not self.data.consumed:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
@@ -158,7 +158,7 @@ class Chunk:
         stream.write(headerbytes)
         self.data.writeto(stream, buffersize)
         if self.padded:
-            padbyte = self.readpad()
+            padbyte = self.readpadbyte()
             stream.write(padbyte)
 
     def __repr__(self):
