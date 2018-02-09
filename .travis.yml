@@ -1,0 +1,16 @@
+language: python
+python:
+  - 3.3
+  - 3.4
+  - 3.5
+  - 3.6
+script:
+  - pip install nose coverage
+  - nosetests ./ ./docs
+    --with-coverage --cover-package=riff --cover-html --cover-erase
+    #--with-doctest --doctest-extension=md --doctest-options=+ELLIPSIS
+  - pip install pycodestyle
+  - pycodestyle ./ --show-source --select=E,W
+after_success:
+  - pip install coveralls
+  - coveralls
