@@ -27,6 +27,8 @@ class ChunkData:
     def read(self, size):
         size = max(size, 0)
         size = min(size, self.size - self.position)
+        if size == 0:
+            return b''
         bytestr = self._stream.read(size)
         self._position += len(bytestr)
         if len(bytestr) < size:

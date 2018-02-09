@@ -337,6 +337,7 @@ class Test_Chunk_skip(TestCase):
         stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
         chunk = riff.Chunk.readfrom(stream)
         stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
         chunk.skip()
         stream.read.assert_not_called()
 
@@ -546,6 +547,132 @@ class Test_ChunkData_size(TestCase):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         self.assertEqual(11, chunk.data.size)
+
+
+class Test_ChunkData_read(TestCase):
+    def test_buffer_empty_for_negative_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        buffer = chunk.data.read(-1)
+        self.assertEqual(b'', buffer)
+
+    def test_buffer_empty_for_zero_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        buffer = chunk.data.read(0)
+        self.assertEqual(b'', buffer)
+
+    def test_buffer_empty_if_all_data_already_read(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.read(11)
+        buffer = chunk.data.read(1)
+        self.assertEqual(b'', buffer)
+
+    def test_buffer_empty_if_all_data_already_skipped(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(11)
+        buffer = chunk.data.read(1)
+        self.assertEqual(b'', buffer)
+
+    def test_position_not_advanced_for_negative_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        position_before = chunk.data.position
+        buffer = chunk.data.read(-1)
+        self.assertEqual(position_before, chunk.data.position)
+
+    def test_position_not_advanced_for_zero_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        position_before = chunk.data.position
+        buffer = chunk.data.read(0)
+        self.assertEqual(position_before, chunk.data.position)
+
+    def test_position_not_advanced_if_all_data_already_read(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.read(11)
+        position_before = chunk.data.position
+        buffer = chunk.data.read(1)
+        self.assertEqual(position_before, chunk.data.position)
+
+    def test_position_not_advanced_if_all_data_already_skipped(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(11)
+        position_before = chunk.data.position
+        buffer = chunk.data.read(1)
+        self.assertEqual(position_before, chunk.data.position)
+
+    def test_stream_not_read_for_negative_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
+        buffer = chunk.data.read(-1)
+        stream.read.assert_not_called()
+
+    def test_stream_not_read_for_zero_size(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
+        buffer = chunk.data.read(0)
+        stream.read.assert_not_called()
+
+    def test_stream_not_read_if_all_data_already_read(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.read(11)
+        stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
+        buffer = chunk.data.read(1)
+        stream.read.assert_not_called()
+
+    def test_stream_not_read_if_all_data_already_skipped(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(11)
+        stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
+        buffer = chunk.data.read(1)
+        stream.read.assert_not_called()
+
+    def test_error_if_chunk_data_truncated(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00Mock')
+        chunk = riff.Chunk.readfrom(stream)
+        with self.assertRaisesError('chunk data truncated'):
+            chunk.data.read(8)
+
+    def test_position_advanced_despite_truncation_error(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00Mock')
+        chunk = riff.Chunk.readfrom(stream)
+        try:
+            chunk.data.read(8)
+        except riff.Error:
+            pass
+        self.assertEqual(4, chunk.data.position)
+
+    def test_buffer_size_bytes_returned(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        buffer = chunk.data.read(4)
+        self.assertEqual(b'Mock', buffer)
+
+    def test_cannot_read_more_than_size_bytes(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        buffer = chunk.data.read(12)
+        self.assertEqual(11, len(buffer))
+
+    def test_cannot_read_more_than_size_bytes_in_total(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.read(4)
+        buffer = chunk.data.read(8)
+        self.assertEqual(7, len(buffer))
 
 
 if __name__ == '__main__':
