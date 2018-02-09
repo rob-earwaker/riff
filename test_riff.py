@@ -250,5 +250,27 @@ class Test_Chunk_readpadbyte(TestCase):
         self.assertEqual(b'\x77', padbyte)
 
 
+class Test_Chunk_size(TestCase):
+    def test_value_after_creating_unpadded_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(8, chunk.size)
+
+    def test_value_after_reading_unpadded_chunk_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(8, chunk.size)
+
+    def test_value_after_creating_padded_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual(11, chunk.size)
+
+    def test_value_after_reading_padded_chunk_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(11, chunk.size)
+
+
 if __name__ == '__main__':
     unittest.main()
