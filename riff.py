@@ -58,7 +58,7 @@ class ChunkData:
         try:
             self._stream.seek(offset, io.SEEK_CUR)
         except (AttributeError, OSError) as error:
-            raise Error('chunk data stream is not seekable') from error
+            raise Error('stream is not seekable') from error
         self._position += offset
 
     def skipall(self):
@@ -147,7 +147,7 @@ class Chunk:
             try:
                 self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
             except (AttributeError, OSError) as error:
-                raise Error('chunk data stream is not seekable') from error
+                raise Error('stream is not seekable') from error
         self._padconsumed = True
 
     def writeto(self, stream, buffersize=1024):

@@ -212,7 +212,7 @@ class Test_Chunk_readpadbyte(TestCase):
         padbyte = chunk.readpadbyte()
         self.assertEqual(b'', padbyte)
 
-    def test_no_pad_byte_if_pad_already_read(self):
+    def test_no_pad_byte_if_pad_byte_already_read(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
@@ -220,7 +220,7 @@ class Test_Chunk_readpadbyte(TestCase):
         padbyte = chunk.readpadbyte()
         self.assertEqual(b'', padbyte)
 
-    def test_no_pad_byte_if_pad_already_skipped(self):
+    def test_no_pad_byte_if_pad_byte_already_skipped(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skipall()
@@ -270,6 +270,120 @@ class Test_Chunk_size(TestCase):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         self.assertEqual(11, chunk.size)
+
+
+class Test_Chunk_skip(TestCase):
+    def test_consumes_chunk_when_not_padded_and_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.skip()
+        self.assertTrue(chunk.consumed)
+
+    def test_consumes_chunk_when_padded_and_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.skip()
+        self.assertTrue(chunk.consumed)
+
+    def test_consumes_chunk_when_not_padded_and_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.skip()
+        self.assertTrue(chunk.consumed)
+
+    def test_consumes_chunk_when_padded_and_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.skip()
+        self.assertTrue(chunk.consumed)
+
+    def test_error_if_stream_has_no_seek_method(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        stream.seek = unittest.mock.Mock(side_effect=AttributeError)
+        chunk = riff.Chunk.readfrom(stream)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.skip()
+
+    def test_error_if_stream_not_seekable(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        stream.seek = unittest.mock.Mock(side_effect=OSError)
+        chunk = riff.Chunk.readfrom(stream)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.skip()
+
+    def test_does_not_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        stream.read = unittest.mock.Mock()
+        chunk.skip()
+        stream.read.assert_not_called()
+
+
+class Test_Chunk_skippadbyte(TestCase):
+    def test_error_if_chunk_data_not_consumed(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(4)
+        with self.assertRaisesError('not all chunk data has been consumed'):
+            chunk.skippadbyte()
+
+    def test_stream_position_unchanged_if_not_padded(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        position_before = stream.tell()
+        chunk.skippadbyte()
+        self.assertEqual(position_before, stream.tell())
+
+    def test_stream_position_unchanged_if_pad_byte_already_read(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        chunk.readpadbyte()
+        position_before = stream.tell()
+        chunk.skippadbyte()
+        self.assertEqual(position_before, stream.tell())
+
+    def test_stream_position_unchanged_if_pad_byte_already_skipped(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        chunk.skippadbyte()
+        position_before = stream.tell()
+        chunk.skippadbyte()
+        self.assertEqual(position_before, stream.tell())
+
+    def test_stream_position_unchanged_if_pad_byte_not_expected(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skipall()
+        position_before = datastream.tell()
+        chunk.skippadbyte()
+        self.assertEqual(position_before, datastream.tell())
+
+    def test_stream_position_advanced_if_pad_byte_expected(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        position_before = stream.tell()
+        chunk.skippadbyte()
+        self.assertEqual(position_before + 1, stream.tell())
+
+    def test_error_if_stream_has_no_seek_method(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        stream.seek = unittest.mock.Mock(side_effect=AttributeError)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.skippadbyte()
+
+    def test_error_if_stream_not_seekable(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        stream.seek = unittest.mock.Mock(side_effect=OSError)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.skippadbyte()
 
 
 if __name__ == '__main__':
