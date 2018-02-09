@@ -12,9 +12,6 @@ class ChunkData:
         self._size = size
         self._position = 0
 
-    def __repr__(self):
-        return 'riff.ChunkData(size={0})'.format(self.size)
-
     @property
     def consumed(self):
         return self.position == self.size
@@ -73,6 +70,9 @@ class ChunkData:
             buffer = self.read(size)
             stream.write(buffer)
 
+    def __repr__(self):
+        return 'riff.ChunkData(size={0})'.format(self.size)
+
 
 class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
@@ -120,6 +120,15 @@ class Chunk:
     def padded(self):
         return self.size % 2 != 0
 
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def totalsize(self):
+        padsize = 1 if self.padded else 0
+        return self.HEADER_STRUCT.size + self.data.size + padsize
+
     def readover(self, buffersize=1024):
         self.data.readoverall(buffersize)
         self.readpadbyte()
@@ -138,10 +147,6 @@ class Chunk:
         self._padconsumed = True
         return padbyte
 
-    @property
-    def size(self):
-        return self.data.size
-
     def skip(self):
         self.data.skipall()
         self.skippadbyte()
@@ -157,11 +162,6 @@ class Chunk:
             except (AttributeError, OSError) as error:
                 raise Error('stream is not seekable') from error
         self._padconsumed = True
-
-    @property
-    def totalsize(self):
-        padsize = 1 if self.padded else 0
-        return self.HEADER_STRUCT.size + self.data.size + padsize
 
     def writeto(self, stream, buffersize=1024):
         if self.data.position != 0:

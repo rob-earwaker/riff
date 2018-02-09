@@ -162,6 +162,50 @@ class Test_Chunk_padded(TestCase):
         self.assertFalse(chunk.padded)
 
 
+class Test_Chunk_size(TestCase):
+    def test_value_after_creating_unpadded_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(8, chunk.size)
+
+    def test_value_after_reading_unpadded_chunk_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(8, chunk.size)
+
+    def test_value_after_creating_padded_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual(11, chunk.size)
+
+    def test_value_after_reading_padded_chunk_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(11, chunk.size)
+
+
+class Test_Chunk_totalsize(TestCase):
+    def test_with_unpadded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(16, chunk.totalsize)
+
+    def test_with_padded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(20, chunk.totalsize)
+
+    def test_with_unpadded_created_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(16, chunk.totalsize)
+
+    def test_with_padded_created_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual(20, chunk.totalsize)
+
+
 class Test_Chunk_readover(TestCase):
     def test_consumes_chunk_when_not_padded_and_pad_byte_expected(self):
         stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
@@ -248,28 +292,6 @@ class Test_Chunk_readpadbyte(TestCase):
         chunk.data.skipall()
         padbyte = chunk.readpadbyte()
         self.assertEqual(b'\x77', padbyte)
-
-
-class Test_Chunk_size(TestCase):
-    def test_value_after_creating_unpadded_chunk(self):
-        datastream = io.BytesIO(b'MockData')
-        chunk = riff.Chunk.create('MOCK', 8, datastream)
-        self.assertEqual(8, chunk.size)
-
-    def test_value_after_reading_unpadded_chunk_from_stream(self):
-        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
-        chunk = riff.Chunk.readfrom(stream)
-        self.assertEqual(8, chunk.size)
-
-    def test_value_after_creating_padded_chunk(self):
-        datastream = io.BytesIO(b'MockDataOdd')
-        chunk = riff.Chunk.create('MOCK', 11, datastream)
-        self.assertEqual(11, chunk.size)
-
-    def test_value_after_reading_padded_chunk_from_stream(self):
-        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
-        chunk = riff.Chunk.readfrom(stream)
-        self.assertEqual(11, chunk.size)
 
 
 class Test_Chunk_skip(TestCase):
@@ -386,28 +408,6 @@ class Test_Chunk_skippadbyte(TestCase):
             chunk.skippadbyte()
 
 
-class Test_Chunk_totalsize(TestCase):
-    def test_with_unpadded_chunk_read_from_stream(self):
-        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
-        chunk = riff.Chunk.readfrom(stream)
-        self.assertEqual(16, chunk.totalsize)
-
-    def test_with_padded_chunk_read_from_stream(self):
-        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
-        chunk = riff.Chunk.readfrom(stream)
-        self.assertEqual(20, chunk.totalsize)
-
-    def test_with_unpadded_created_chunk(self):
-        datastream = io.BytesIO(b'MockData')
-        chunk = riff.Chunk.create('MOCK', 8, datastream)
-        self.assertEqual(16, chunk.totalsize)
-
-    def test_with_padded_created_chunk(self):
-        datastream = io.BytesIO(b'MockDataOdd')
-        chunk = riff.Chunk.create('MOCK', 11, datastream)
-        self.assertEqual(20, chunk.totalsize)
-
-
 class Test_Chunk_writeto(TestCase):
     def test_error_if_chunk_data_partially_consumed(self):
         instream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
@@ -469,6 +469,83 @@ class Test_Chunk_repr(TestCase):
         datastream = io.BytesIO(b'MockDataOdd')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         self.assertEqual("riff.Chunk(id='MOCK', size=11)", repr(chunk))
+
+
+class Test_ChunkData_consumed(TestCase):
+    def test_False_if_data_not_fully_consumed(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.data.skip(4)
+        self.assertFalse(chunk.data.consumed)
+
+    def test_True_if_all_data_read(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.data.read(8)
+        self.assertTrue(chunk.data.consumed)
+
+    def test_True_if_all_data_skipped(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.data.skip(8)
+        self.assertTrue(chunk.data.consumed)
+
+class Test_ChunkData_position(TestCase):
+    def test_intially_zero_when_chunk_created(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(0, chunk.data.position)
+
+    def test_intially_zero_when_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(0, chunk.data.position)
+
+    def test_advances_by_size_when_reading(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.data.read(4)
+        self.assertEqual(4, chunk.data.position)
+
+    def test_advances_by_size_when_skipping(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        chunk.data.skip(4)
+        self.assertEqual(4, chunk.data.position)
+
+    def test_does_not_exceed_size_when_reading_too_many_bytes(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.read(12)
+        self.assertEqual(11, chunk.data.position)
+
+    def test_does_not_exceed_size_when_skipping_too_many_bytes(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skip(12)
+        self.assertEqual(11, chunk.data.position)
+
+
+class Test_ChunkData_size(TestCase):
+    def test_for_unpadded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(8, chunk.data.size)
+
+    def test_for_padded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual(11, chunk.data.size)
+
+    def test_for_unpadded_created_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual(8, chunk.data.size)
+
+    def test_for_padded_created_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual(11, chunk.data.size)
 
 
 if __name__ == '__main__':
