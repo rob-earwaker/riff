@@ -694,7 +694,7 @@ class Test_ChunkData_readall(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         buffer = chunk.data.readall()
         self.assertEqual(b'MockDataOdd', buffer)
-    
+
     def test_reads_all_bytes_from_position(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
