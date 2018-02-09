@@ -967,6 +967,5 @@ class Test_ChunkData_skip(TestCase):
         self.assertEqual(11, datastream.tell())
 
 
-
 if __name__ == '__main__':
     unittest.main()
