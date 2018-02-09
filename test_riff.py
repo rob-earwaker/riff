@@ -833,7 +833,7 @@ class Test_ChunkData_readoverall(TestCase):
         chunk = riff.Chunk.create('MOCK', 11, datastream)
         chunk.data.readoverall()
         self.assertEqual(11, chunk.data.position)
-    
+
     def test_advances_position_to_end_from_current_position(self):
         datastream = io.BytesIO(b'MockDataOdd\x00')
         chunk = riff.Chunk.create('MOCK', 11, datastream)
