@@ -158,6 +158,11 @@ class Chunk:
                 raise Error('stream is not seekable') from error
         self._padconsumed = True
 
+    @property
+    def totalsize(self):
+        padsize = 1 if self.padded else 0
+        return self.HEADER_STRUCT.size + self.data.size + padsize
+
     def writeto(self, stream, buffersize=1024):
         if self.data.position != 0:
             raise Error('chunk partially consumed')
