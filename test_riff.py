@@ -427,5 +427,27 @@ class Test_Chunk_writeto(TestCase):
         self.assertTrue(all(size <= 4 for size in read_sizes))
 
 
+class Test_Chunk_repr(TestCase):
+    def test_for_unpadded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual("riff.Chunk(id='MOCK', size=8)", repr(chunk))
+
+    def test_for_padded_chunk_read_from_stream(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertEqual("riff.Chunk(id='MOCK', size=11)", repr(chunk))
+
+    def test_for_unpadded_created_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual("riff.Chunk(id='MOCK', size=8)", repr(chunk))
+
+    def test_for_padded_created_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual("riff.Chunk(id='MOCK', size=11)", repr(chunk))
+
+
 if __name__ == '__main__':
     unittest.main()
