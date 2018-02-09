@@ -702,6 +702,12 @@ class Test_ChunkData_readall(TestCase):
         buffer = chunk.data.readall()
         self.assertEqual(b'DataOdd', buffer)
 
+    def test_consumes_chunk_data(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.readall()
+        self.assertTrue(chunk.data.consumed)
+
 
 class Test_ChunkData_readover(TestCase):
     def test_position_not_advanced_for_negative_size(self):
@@ -802,6 +808,36 @@ class Test_ChunkData_readover(TestCase):
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
         chunk.data.readover(11, buffersize=4)
+        read_sizes = [args[0] for args, _ in stream.read.call_args_list]
+        self.assertTrue(all(size <= 4 for size in read_sizes))
+
+
+class Test_ChunkData_readoverall(TestCase):
+    def test_advances_position_to_end_from_start(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.readoverall()
+        self.assertEqual(11, chunk.data.position)
+    
+    def test_advances_position_to_end_from_current_position(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skip(4)
+        chunk.data.readoverall()
+        self.assertEqual(11, chunk.data.position)
+
+    def test_consumes_chunk_data(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.readoverall()
+        self.assertTrue(chunk.data.consumed)
+
+    def test_does_not_read_more_than_buffer_size_bytes_at_once(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        stream.read = unittest.mock.Mock()
+        stream.read.side_effect = lambda size: b'\x00' * size
+        chunk.data.readoverall(buffersize=4)
         read_sizes = [args[0] for args, _ in stream.read.call_args_list]
         self.assertTrue(all(size <= 4 for size in read_sizes))
 
