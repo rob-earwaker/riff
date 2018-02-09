@@ -6,7 +6,7 @@ python:
   - 3.6
 script:
   - pip install nose coverage
-  - nosetests ./ ./docs
+  - nosetests ./
     --with-coverage --cover-package=riff --cover-html --cover-erase
     #--with-doctest --doctest-extension=md --doctest-options=+ELLIPSIS
   - pip install pycodestyle
