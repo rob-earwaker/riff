@@ -22,7 +22,7 @@ class Test_Chunk_create(TestCase):
 
     def test_does_not_read_data_stream(self):
         datastream = io.BytesIO(b'MockData')
-        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        riff.Chunk.create('MOCK', 8, datastream)
         self.assertEqual(0, datastream.tell())
 
 
@@ -491,6 +491,7 @@ class Test_ChunkData_consumed(TestCase):
         chunk.data.skip(8)
         self.assertTrue(chunk.data.consumed)
 
+
 class Test_ChunkData_position(TestCase):
     def test_intially_zero_when_chunk_created(self):
         datastream = io.BytesIO(b'MockData')
@@ -580,14 +581,14 @@ class Test_ChunkData_read(TestCase):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         position_before = chunk.data.position
-        buffer = chunk.data.read(-1)
+        chunk.data.read(-1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_for_zero_size(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         position_before = chunk.data.position
-        buffer = chunk.data.read(0)
+        chunk.data.read(0)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_if_all_data_already_read(self):
@@ -595,7 +596,7 @@ class Test_ChunkData_read(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.read(11)
         position_before = chunk.data.position
-        buffer = chunk.data.read(1)
+        chunk.data.read(1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_if_all_data_already_skipped(self):
@@ -603,7 +604,7 @@ class Test_ChunkData_read(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skip(11)
         position_before = chunk.data.position
-        buffer = chunk.data.read(1)
+        chunk.data.read(1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_stream_not_read_for_negative_size(self):
@@ -611,7 +612,7 @@ class Test_ChunkData_read(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.read(-1)
+        chunk.data.read(-1)
         stream.read.assert_not_called()
 
     def test_stream_not_read_for_zero_size(self):
@@ -619,7 +620,7 @@ class Test_ChunkData_read(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.read(0)
+        chunk.data.read(0)
         stream.read.assert_not_called()
 
     def test_stream_not_read_if_all_data_already_read(self):
@@ -628,7 +629,7 @@ class Test_ChunkData_read(TestCase):
         chunk.data.read(11)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.read(1)
+        chunk.data.read(1)
         stream.read.assert_not_called()
 
     def test_stream_not_read_if_all_data_already_skipped(self):
@@ -637,7 +638,7 @@ class Test_ChunkData_read(TestCase):
         chunk.data.skip(11)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.read(1)
+        chunk.data.read(1)
         stream.read.assert_not_called()
 
     def test_error_if_chunk_data_truncated(self):
@@ -729,14 +730,14 @@ class Test_ChunkData_readover(TestCase):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         position_before = chunk.data.position
-        buffer = chunk.data.readover(-1)
+        chunk.data.readover(-1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_for_zero_size(self):
         stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
         chunk = riff.Chunk.readfrom(stream)
         position_before = chunk.data.position
-        buffer = chunk.data.readover(0)
+        chunk.data.readover(0)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_if_all_data_already_read(self):
@@ -744,7 +745,7 @@ class Test_ChunkData_readover(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.read(11)
         position_before = chunk.data.position
-        buffer = chunk.data.readover(1)
+        chunk.data.readover(1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_position_not_advanced_if_all_data_already_skipped(self):
@@ -752,7 +753,7 @@ class Test_ChunkData_readover(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         chunk.data.skip(11)
         position_before = chunk.data.position
-        buffer = chunk.data.readover(1)
+        chunk.data.readover(1)
         self.assertEqual(position_before, chunk.data.position)
 
     def test_stream_not_read_for_negative_size(self):
@@ -760,7 +761,7 @@ class Test_ChunkData_readover(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.readover(-1)
+        chunk.data.readover(-1)
         stream.read.assert_not_called()
 
     def test_stream_not_read_for_zero_size(self):
@@ -768,7 +769,7 @@ class Test_ChunkData_readover(TestCase):
         chunk = riff.Chunk.readfrom(stream)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.readover(0)
+        chunk.data.readover(0)
         stream.read.assert_not_called()
 
     def test_stream_not_read_if_all_data_already_read(self):
@@ -777,7 +778,7 @@ class Test_ChunkData_readover(TestCase):
         chunk.data.read(11)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.readover(1)
+        chunk.data.readover(1)
         stream.read.assert_not_called()
 
     def test_stream_not_read_if_all_data_already_skipped(self):
@@ -786,7 +787,7 @@ class Test_ChunkData_readover(TestCase):
         chunk.data.skip(11)
         stream.read = unittest.mock.Mock()
         stream.read.side_effect = lambda size: b'\x00' * size
-        buffer = chunk.data.readover(1)
+        chunk.data.readover(1)
         stream.read.assert_not_called()
 
     def test_error_if_chunk_data_truncated(self):
