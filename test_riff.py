@@ -1043,5 +1043,17 @@ class Test_ChunkData_writeto(TestCase):
         self.assertTrue(all(size <= 4 for size in read_sizes))
 
 
+class Test_ChunkData_repr(TestCase):
+    def test_for_unpadded_chunk(self):
+        datastream = io.BytesIO(b'MockData')
+        chunk = riff.Chunk.create('MOCK', 8, datastream)
+        self.assertEqual("riff.ChunkData(size=8)", repr(chunk.data))
+
+    def test_for_padded_chunk(self):
+        datastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        self.assertEqual("riff.ChunkData(size=11)", repr(chunk.data))
+
+
 if __name__ == '__main__':
     unittest.main()
