@@ -968,5 +968,80 @@ class Test_ChunkData_skip(TestCase):
         self.assertEqual(11, datastream.tell())
 
 
+class Test_ChunkData_skipall(TestCase):
+    def test_advances_position_to_end_from_start(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skipall()
+        self.assertEqual(11, chunk.data.position)
+
+    def test_advances_position_to_end_from_current_position(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skip(4)
+        chunk.data.skipall()
+        self.assertEqual(11, chunk.data.position)
+
+    def test_advances_stream_position_to_end_from_start(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skipall()
+        self.assertEqual(11, datastream.tell())
+
+    def test_advances_stream_position_to_end_from_current_position(self):
+        datastream = io.BytesIO(b'MockDataOdd\x00')
+        chunk = riff.Chunk.create('MOCK', 11, datastream)
+        chunk.data.skip(4)
+        chunk.data.skipall()
+        self.assertEqual(11, datastream.tell())
+
+    def test_consumes_chunk_data(self):
+        stream = io.BytesIO(b'MOCK\x0b\x00\x00\x00MockDataOdd\x00')
+        chunk = riff.Chunk.readfrom(stream)
+        chunk.data.skipall()
+        self.assertTrue(chunk.data.consumed)
+
+    def test_error_if_stream_has_no_seek_method(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        stream.seek = unittest.mock.Mock(side_effect=AttributeError)
+        chunk = riff.Chunk.readfrom(stream)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.data.skipall()
+
+    def test_error_if_stream_not_seekable(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        stream.seek = unittest.mock.Mock(side_effect=OSError)
+        chunk = riff.Chunk.readfrom(stream)
+        with self.assertRaisesError('stream is not seekable'):
+            chunk.data.skipall()
+
+
+class Test_ChunkData_writeto(TestCase):
+    def test_error_if_chunk_data_partially_consumed(self):
+        instream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(instream)
+        chunk.data.skip(4)
+        outstream = io.BytesIO()
+        with self.assertRaisesError('chunk data partially consumed'):
+            chunk.data.writeto(outstream)
+
+    def test_read_then_write_preserves_bytes(self):
+        indatastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, indatastream)
+        outdatastream = io.BytesIO()
+        chunk.data.writeto(outdatastream)
+        self.assertEqual(indatastream.getvalue(), outdatastream.getvalue())
+
+    def test_does_not_read_more_than_buffer_size_bytes_at_once(self):
+        indatastream = io.BytesIO(b'MockDataOdd')
+        chunk = riff.Chunk.create('MOCK', 11, indatastream)
+        indatastream.read = unittest.mock.Mock()
+        indatastream.read.side_effect = lambda size: b'\x00' * size
+        outdatastream = io.BytesIO()
+        chunk.data.writeto(outdatastream, buffersize=4)
+        read_sizes = [args[0] for args, _ in indatastream.read.call_args_list]
+        self.assertTrue(all(size <= 4 for size in read_sizes))
+
+
 if __name__ == '__main__':
     unittest.main()
