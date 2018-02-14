@@ -6,7 +6,7 @@ class Error(Exception):
     pass
 
 
-class ChunkDataStream:
+class ChunkData:
     def __init__(self, stream, size):
         self._stream = stream
         self._size = size
@@ -73,10 +73,10 @@ class ChunkDataStream:
             stream.write(buffer)
 
     def __repr__(self):
-        return 'riff.ChunkDataStream(size={0})'.format(self.size)
+        return 'riff.ChunkData(size={0})'.format(self.size)
 
 
-class ChunkStream:
+class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
     PAD_SIZE = 1
 
@@ -90,11 +90,11 @@ class ChunkStream:
 
     @classmethod
     def create(cls, id, size, datastream):
-        data = ChunkDataStream(datastream, size)
+        data = ChunkData(datastream, size)
         return cls(id, data, stream=datastream, expectpadbyte=False)
 
     @classmethod
-    def readfrom(cls, stream):
+    def streamfrom(cls, stream):
         bytestr = stream.read(cls.HEADER_STRUCT.size)
         if len(bytestr) < cls.HEADER_STRUCT.size:
             raise Error('chunk header truncated')
@@ -103,7 +103,7 @@ class ChunkStream:
             id = idbytes.decode('ascii')
         except UnicodeDecodeError as error:
             raise Error('chunk id not ascii-decodable') from error
-        data = ChunkDataStream(stream, size)
+        data = ChunkData(stream, size)
         return cls(id, data, stream, expectpadbyte=True)
 
     @property
@@ -177,7 +177,7 @@ class ChunkStream:
             stream.write(padbyte)
 
     def __repr__(self):
-        return "riff.ChunkStream(id='{}', size={})".format(self.id, self.size)
+        return "riff.Chunk(id='{}', size={})".format(self.id, self.size)
 
 
 class RiffChunk:
@@ -203,7 +203,7 @@ class RiffChunk:
 
     @classmethod
     def read(cls, stream):
-        chunk = ChunkStream.read(stream)
+        chunk = Chunk.read(stream)
         if chunk.id != cls.ID:
             raise Error("chunk id '{0}' != '{1}'".format(chunk.id, cls.ID))
         if chunk.size < cls.MIN_CHUNK_SIZE:
