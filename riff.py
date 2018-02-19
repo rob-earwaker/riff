@@ -86,7 +86,6 @@ class Chunk:
         self._stream = stream
         self._padbyte = padbyte
         self._padconsumed = False
-        self._position = 0
 
     @classmethod
     def create(cls, id, size, datastream):
