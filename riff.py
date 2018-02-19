@@ -80,18 +80,20 @@ class Chunk:
     HEADER_STRUCT = struct.Struct('<4sI')
     PAD_SIZE = 1
 
-    def __init__(self, id, data, stream, expectpadbyte):
+    def __init__(self, id, data, stream, padbyte):
         self._id = id
         self._data = data
         self._stream = stream
-        self._expectpadbyte = expectpadbyte
+        self._padbyte = padbyte
         self._padconsumed = False
         self._position = 0
 
     @classmethod
     def create(cls, id, size, datastream):
         data = ChunkData(datastream, size)
-        return cls(id, data, stream=datastream, expectpadbyte=False)
+        padded = size % 2 != 0
+        padbyte = b'\x00' if padded else b''
+        return cls(id, data, datastream, padbyte)
 
     @classmethod
     def readfrom(cls, stream):
@@ -105,7 +107,9 @@ class Chunk:
             raise Error('chunk id not ascii-decodable') from error
         datastream = io.BytesIO(stream.read(size))
         data = ChunkData(datastream, size)
-        return cls(id, data, stream, expectpadbyte=True)
+        padded = size % 2 != 0
+        padbyte = stream.read(cls.PAD_SIZE) if padded else b''
+        return cls(id, data, stream, padbyte)
 
     @classmethod
     def streamfrom(cls, stream):
@@ -118,7 +122,9 @@ class Chunk:
         except UnicodeDecodeError as error:
             raise Error('chunk id not ascii-decodable') from error
         data = ChunkData(stream, size)
-        return cls(id, data, stream, expectpadbyte=True)
+        padded = size % 2 != 0
+        padbyte = None if padded else b''
+        return cls(id, data, stream, padbyte)
 
     @property
     def consumed(self):
@@ -152,10 +158,10 @@ class Chunk:
     def readpadbyte(self):
         if not self.data.consumed:
             raise Error('not all chunk data has been consumed')
-        if not self.padded or self._padconsumed:
+        if self._padconsumed:
             return b''
-        if not self._expectpadbyte:
-            padbyte = b'\x00'
+        if self._padbyte is not None:
+            padbyte = self._padbyte
         else:
             padbyte = self._stream.read(self.PAD_SIZE)
             if len(padbyte) < self.PAD_SIZE:
@@ -172,7 +178,7 @@ class Chunk:
             raise Error('not all chunk data has been consumed')
         if not self.padded or self._padconsumed:
             return
-        if self._expectpadbyte:
+        if self._padbyte is None:
             try:
                 self._stream.seek(self.PAD_SIZE, io.SEEK_CUR)
             except (AttributeError, OSError) as error:
