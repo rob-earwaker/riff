@@ -94,6 +94,20 @@ class Chunk:
         return cls(id, data, stream=datastream, expectpadbyte=False)
 
     @classmethod
+    def readfrom(cls, stream):
+        bytestr = stream.read(cls.HEADER_STRUCT.size)
+        if len(bytestr) < cls.HEADER_STRUCT.size:
+            raise Error('chunk header truncated')
+        idbytes, size = cls.HEADER_STRUCT.unpack(bytestr)
+        try:
+            id = idbytes.decode('ascii')
+        except UnicodeDecodeError as error:
+            raise Error('chunk id not ascii-decodable') from error
+        datastream = io.BytesIO(stream.read(size))
+        data = ChunkData(datastream, size)
+        return cls(id, data, stream, expectpadbyte=True)
+
+    @classmethod
     def streamfrom(cls, stream):
         bytestr = stream.read(cls.HEADER_STRUCT.size)
         if len(bytestr) < cls.HEADER_STRUCT.size:
