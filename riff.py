@@ -6,7 +6,7 @@ class Error(Exception):
     pass
 
 
-class StreamSection:
+class StreamSection(io.BufferedIOBase):
     def __init__(self, stream, size):
         self._stream = stream
         self._size = size
