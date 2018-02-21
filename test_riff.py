@@ -1055,5 +1055,12 @@ class Test_ChunkData_repr(TestCase):
         self.assertEqual("riff.ChunkData(size=11)", repr(chunk.data))
 
 
+class Test_StreamSection_size(TestCase):
+    def test_returns_input_size(self):
+        stream = io.BytesIO(b'SomeRandomTestData')
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(8, section.size)
+
+
 if __name__ == '__main__':
     unittest.main()

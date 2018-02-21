@@ -6,6 +6,16 @@ class Error(Exception):
     pass
 
 
+class StreamSection:
+    def __init__(self, stream, size):
+        self._stream = stream
+        self._size = size
+
+    @property
+    def size(self):
+        return self._size
+
+
 class ChunkData(io.BufferedIOBase):
     def __init__(self, stream, size):
         self._stream = stream
