@@ -10,10 +10,28 @@ class StreamSection(io.BufferedIOBase):
     def __init__(self, stream, size):
         self._stream = stream
         self._size = size
+        self._position = 0
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        if self.closed:
+            raise ValueError('stream closed')
+        if whence == io.SEEK_SET:
+            position = offset
+        elif whence == io.SEEK_CUR:
+            position = self.tell() + offset
+        elif whence == io.SEEK_END:
+            position = self.size + offset
+        else:
+            raise ValueError('invalid whence value')
+        self._position = max(0, min(position, self.size))
+        return self.tell()
 
     @property
     def size(self):
         return self._size
+
+    def tell(self):
+        return self._position
 
 
 class ChunkData(io.BufferedIOBase):

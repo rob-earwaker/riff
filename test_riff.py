@@ -1057,13 +1057,13 @@ class Test_ChunkData_repr(TestCase):
 
 class Test_StreamSection_enter(TestCase):
     def test_returns_self(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         with section as context:
             self.assertIs(section, context)
 
     def test_error_if_closed(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
         with self.assertRaises(ValueError):
@@ -1073,14 +1073,14 @@ class Test_StreamSection_enter(TestCase):
 
 class Test_StreamSection_exit(TestCase):
     def test_closes_self(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         with section:
             pass
         self.assertTrue(section.closed)
 
     def test_does_not_close_stream(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         with riff.StreamSection(stream, 8):
             pass
         self.assertFalse(stream.closed)
@@ -1088,19 +1088,19 @@ class Test_StreamSection_exit(TestCase):
 
 class Test_StreamSection_close(TestCase):
     def test_closes_self(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
         self.assertTrue(section.closed)
 
     def test_can_be_called_multiple_times(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
         section.close()
 
     def test_does_not_close_stream(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
         self.assertFalse(stream.closed)
@@ -1108,28 +1108,98 @@ class Test_StreamSection_close(TestCase):
 
 class Test_StreamSection_closed(TestCase):
     def test_False_after_init(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         self.assertFalse(section.closed)
 
     def test_True_after_closing(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
         self.assertTrue(section.closed)
 
     def test_True_after_exiting_context_manager(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         with riff.StreamSection(stream, 8) as section:
             pass
         self.assertTrue(section.closed)
 
 
+class Test_StreamSection_seek(TestCase):
+    def test_seeks_relative_to_start_by_default(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        self.assertEqual(4, section.tell())
+
+    def test_seek_relative_to_start(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4, io.SEEK_SET)
+        self.assertEqual(4, section.tell())
+
+    def test_positive_seek_relative_to_current_position(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(1)
+        section.seek(4, io.SEEK_CUR)
+        self.assertEqual(5, section.tell())
+
+    def test_negative_seek_relative_to_current_position(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(5)
+        section.seek(-4, io.SEEK_CUR)
+        self.assertEqual(1, section.tell())
+
+    def test_seek_relative_to_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(-4, io.SEEK_END)
+        self.assertEqual(4, section.tell())
+
+    def test_ValueError_for_invalid_whence(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(ValueError) as context:
+            section.seek(4, whence=3)
+        self.assertEqual('invalid whence value', str(context.exception))
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.seek(4)
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_size(TestCase):
     def test_returns_input_size(self):
-        stream = io.BytesIO(b'SomeRandomTestData')
+        stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         self.assertEqual(8, section.size)
+
+
+class Test_StreamSection_tell(TestCase):
+    def test_returns_zero_after_init(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(0, section.tell())
+
+    def test_returns_same_position_despite_stream_seek(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.seek(4, io.SEEK_SET)
+        position_before = section.tell()
+        stream.seek(10, io.SEEK_SET)
+        self.assertEqual(position_before, section.tell())
 
 
 if __name__ == '__main__':
