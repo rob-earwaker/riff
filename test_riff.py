@@ -1140,7 +1140,21 @@ class Test_StreamSection_seek(TestCase):
         section.seek(4, io.SEEK_SET)
         self.assertEqual(4, section.tell())
 
-    def test_positive_seek_relative_to_current_position(self):
+    def test_seek_relative_to_start_constrained_by_start(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(-1, io.SEEK_SET)
+        self.assertEqual(0, section.tell())
+
+    def test_seek_relative_to_start_constrained_by_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(9, io.SEEK_SET)
+        self.assertEqual(8, section.tell())
+
+    def test_positive_seek_relative_to_current(self):
         stream = io.BytesIO(b'SomeMockTestData')
         stream.seek(4)
         section = riff.StreamSection(stream, 8)
@@ -1148,7 +1162,7 @@ class Test_StreamSection_seek(TestCase):
         section.seek(4, io.SEEK_CUR)
         self.assertEqual(5, section.tell())
 
-    def test_negative_seek_relative_to_current_position(self):
+    def test_negative_seek_relative_to_current(self):
         stream = io.BytesIO(b'SomeMockTestData')
         stream.seek(4)
         section = riff.StreamSection(stream, 8)
@@ -1156,12 +1170,42 @@ class Test_StreamSection_seek(TestCase):
         section.seek(-4, io.SEEK_CUR)
         self.assertEqual(1, section.tell())
 
+    def test_seek_relative_to_current_constrained_by_start(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        section.seek(-5, io.SEEK_CUR)
+        self.assertEqual(0, section.tell())
+
+    def test_seek_relative_to_current_constrained_by_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        section.seek(5, io.SEEK_CUR)
+        self.assertEqual(8, section.tell())
+
     def test_seek_relative_to_end(self):
         stream = io.BytesIO(b'SomeMockTestData')
         stream.seek(4)
         section = riff.StreamSection(stream, 8)
         section.seek(-4, io.SEEK_END)
         self.assertEqual(4, section.tell())
+
+    def test_seek_relative_to_end_constrained_by_start(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(-9, io.SEEK_END)
+        self.assertEqual(0, section.tell())
+
+    def test_seek_relative_to_end_constrained_by_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(1, io.SEEK_END)
+        self.assertEqual(8, section.tell())
 
     def test_ValueError_for_invalid_whence(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1200,6 +1244,14 @@ class Test_StreamSection_tell(TestCase):
         position_before = section.tell()
         stream.seek(10, io.SEEK_SET)
         self.assertEqual(position_before, section.tell())
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.tell()
+        self.assertEqual('stream closed', str(context.exception))
 
 
 if __name__ == '__main__':

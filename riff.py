@@ -18,20 +18,20 @@ class StreamSection(io.BufferedIOBase):
         if whence == io.SEEK_SET:
             position = offset
         elif whence == io.SEEK_CUR:
-            position = self.tell() + offset
+            position = self._position + offset
         elif whence == io.SEEK_END:
             position = self.size + offset
         else:
             raise ValueError('invalid whence value')
         self._position = max(0, min(position, self.size))
-        return self.tell()
+        return self._position
 
     @property
     def size(self):
         return self._size
 
     def tell(self):
-        return self._position
+        return self.seek(0, io.SEEK_CUR)
 
 
 class ChunkData(io.BufferedIOBase):
