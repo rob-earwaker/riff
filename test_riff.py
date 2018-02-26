@@ -1213,7 +1213,7 @@ class Test_StreamSection_read(TestCase):
         section = riff.StreamSection(stream, 8)
         try:
             section.read(4)
-        except:
+        except riff.Error:
             pass
         self.assertEqual(3, section.tell())
 
