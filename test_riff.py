@@ -1125,6 +1125,14 @@ class Test_StreamSection_closed(TestCase):
         self.assertTrue(section.closed)
 
 
+class Test_StreamSection_fileno(TestCase):
+    def test_returns_stream_fileno(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.fileno = unittest.mock.Mock(return_value=12345)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(12345, section.fileno())
+
+
 class Test_StreamSection_seek(TestCase):
     def test_seeks_relative_to_start_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')

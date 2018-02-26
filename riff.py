@@ -12,6 +12,9 @@ class StreamSection(io.BufferedIOBase):
         self._size = size
         self._position = 0
 
+    def fileno(self):
+        return self._stream.fileno()
+
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
             raise ValueError('stream closed')
