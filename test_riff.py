@@ -1142,6 +1142,89 @@ class Test_StreamSection_fileno(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_read(TestCase):
+    def test_reads_all_bytes_by_default(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read())
+
+    def test_reads_all_bytes_for_negative_size(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read(-1))
+
+    def test_reads_all_bytes_for_None_size(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read(None))
+
+    def test_no_bytes_when_size_is_zero(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'', section.read(0))
+
+    def test_read_part_of_stream(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'Mock', section.read(4))
+
+    def test_reading_past_end_only_returns_size_bytes(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read(9))
+
+    def test_reading_past_end_moves_cursor_to_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read(9)
+        self.assertEqual(8, section.tell())
+
+    def test_reading_moves_cursor_forward_by_size(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read(4)
+        self.assertEqual(4, section.tell())
+
+    def test_reading_all_moves_cursor_to_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read()
+        self.assertEqual(8, section.tell())
+
+    def test_error_when_section_truncated(self):
+        stream = io.BytesIO(b'SomeMoc')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaisesError('truncated at position 3'):
+            section.read(4)
+
+    def test_advances_cursor_despite_truncation(self):
+        stream = io.BytesIO(b'SomeMoc')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        try:
+            section.read(4)
+        except:
+            pass
+        self.assertEqual(3, section.tell())
+
+    def test_reads_from_cursor_position(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        self.assertEqual(b'Test', section.read(4))
+
+
 class Test_StreamSection_seek(TestCase):
     def test_seeks_relative_to_start_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')

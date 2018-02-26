@@ -10,12 +10,23 @@ class StreamSection(io.BufferedIOBase):
     def __init__(self, stream, size):
         self._stream = stream
         self._size = size
+        self._startpos = stream.seek(0, io.SEEK_CUR)
         self._position = 0
 
     def fileno(self):
         if self.closed:
             raise ValueError('stream closed')
         return self._stream.fileno()
+
+    def read(self, size=None):
+        self._stream.seek(self._startpos + self.tell(), io.SEEK_SET)
+        maxsize = self.size - self.tell()
+        size = maxsize if size is None or size < 0 else min(size, maxsize)
+        buffer = self._stream.read(size)
+        self._position += len(buffer)
+        if len(buffer) < size:
+            raise Error('truncated at position {}'.format(self.tell()))
+        return buffer
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
