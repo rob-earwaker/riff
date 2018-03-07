@@ -37,6 +37,11 @@ class StreamSection(io.BufferedIOBase):
             raise Error('truncated at position {}'.format(self.tell()))
         return buffer
 
+    def readable(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        return self._stream.readable()
+
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
             raise ValueError('stream closed')

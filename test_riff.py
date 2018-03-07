@@ -1128,13 +1128,14 @@ class Test_StreamSection_closed(TestCase):
 class Test_StreamSection_fileno(TestCase):
     def test_returns_stream_fileno(self):
         stream = io.BytesIO(b'SomeMockTestData')
-        stream.fileno = unittest.mock.Mock(return_value=12345)
+        mock = unittest.mock.Mock()
+        stream.fileno = unittest.mock.Mock(return_value=mock)
         section = riff.StreamSection(stream, 8)
-        self.assertEqual(12345, section.fileno())
+        self.assertEqual(mock, section.fileno())
 
     def test_ValueError_if_closed(self):
         stream = io.BytesIO(b'SomeMockTestData')
-        stream.fileno = unittest.mock.Mock(return_value=12345)
+        stream.fileno = unittest.mock.Mock()
         section = riff.StreamSection(stream, 8)
         section.close()
         with self.assertRaises(ValueError) as context:
@@ -1160,13 +1161,14 @@ class Test_StreamSection_flush(TestCase):
 class Test_StreamSection_isatty(TestCase):
     def test_returns_whether_stream_isatty(self):
         stream = io.BytesIO(b'SomeMockTestData')
-        stream.isatty = unittest.mock.Mock(return_value=True)
+        mock = unittest.mock.Mock()
+        stream.isatty = unittest.mock.Mock(return_value=mock)
         section = riff.StreamSection(stream, 8)
-        self.assertEqual(True, section.isatty())
+        self.assertEqual(mock, section.isatty())
 
     def test_ValueError_if_closed(self):
         stream = io.BytesIO(b'SomeMockTestData')
-        stream.isatty = unittest.mock.Mock(return_value=True)
+        stream.isatty = unittest.mock.Mock()
         section = riff.StreamSection(stream, 8)
         section.close()
         with self.assertRaises(ValueError) as context:
@@ -1255,6 +1257,24 @@ class Test_StreamSection_read(TestCase):
         section = riff.StreamSection(stream, 8)
         section.seek(4)
         self.assertEqual(b'Test', section.read(4))
+
+
+class Test_StreamSection_readable(TestCase):
+    def test_returns_whether_stream_readable(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        mock = unittest.mock.Mock()
+        stream.readable = unittest.mock.Mock(return_value=mock)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(mock, section.readable())
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.readable = unittest.mock.Mock()
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.readable()
+        self.assertEqual('stream closed', str(context.exception))
 
 
 class Test_StreamSection_seek(TestCase):
