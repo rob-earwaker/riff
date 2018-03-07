@@ -1446,5 +1446,59 @@ class Test_StreamSection_writable(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_writelines(TestCase):
+    def test_raises_error(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(io.UnsupportedOperation) as context:
+            section.writelines([b'Line1\n', b'Line2\n'])
+        self.assertEqual('stream not writable', str(context.exception))
+
+    def test_does_not_call_stream_writelines_method(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.writelines = unittest.mock.Mock()
+        section = riff.StreamSection(stream, 8)
+        try:
+            section.writelines([b'Line1\n', b'Line2\n'])
+        except io.UnsupportedOperation:
+            pass
+        stream.writelines.assert_not_called()
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.writelines([b'Line1\n', b'Line2\n'])
+        self.assertEqual('stream closed', str(context.exception))
+
+
+class Test_StreamSection_write(TestCase):
+    def test_raises_error(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(io.UnsupportedOperation) as context:
+            section.write(b'Data')
+        self.assertEqual('stream not writable', str(context.exception))
+
+    def test_does_not_call_stream_write_method(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.write = unittest.mock.Mock()
+        section = riff.StreamSection(stream, 8)
+        try:
+            section.write(b'Data')
+        except io.UnsupportedOperation:
+            pass
+        stream.write.assert_not_called()
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.write(b'Data')
+        self.assertEqual('stream closed', str(context.exception))
+
+
 if __name__ == '__main__':
     unittest.main()

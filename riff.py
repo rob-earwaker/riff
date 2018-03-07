@@ -73,6 +73,16 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return False
 
+    def write(self, lines):
+        if self.closed:
+            raise ValueError('stream closed')
+        raise io.UnsupportedOperation('stream not writable')
+
+    def writelines(self, lines):
+        if self.closed:
+            raise ValueError('stream closed')
+        raise io.UnsupportedOperation('stream not writable')
+
 
 class ChunkData(io.BufferedIOBase):
     def __init__(self, stream, size):
