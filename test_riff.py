@@ -1142,6 +1142,21 @@ class Test_StreamSection_fileno(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_flush(TestCase):
+    def test_does_not_raise_error(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.flush()
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.flush()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_read(TestCase):
     def test_reads_all_bytes_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')

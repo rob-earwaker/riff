@@ -18,6 +18,10 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return self._stream.fileno()
 
+    def flush(self):
+        if self.closed:
+            raise ValueError('stream closed')
+
     def read(self, size=None):
         self._stream.seek(self._startpos + self.tell(), io.SEEK_SET)
         maxsize = self.size - self.tell()
