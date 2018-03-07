@@ -22,6 +22,11 @@ class StreamSection(io.BufferedIOBase):
         if self.closed:
             raise ValueError('stream closed')
 
+    def isatty(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        return self._stream.isatty()
+
     def read(self, size=None):
         self._stream.seek(self._startpos + self.tell(), io.SEEK_SET)
         maxsize = self.size - self.tell()

@@ -1157,6 +1157,23 @@ class Test_StreamSection_flush(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_isatty(TestCase):
+    def test_returns_whether_stream_isatty(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.isatty = unittest.mock.Mock(return_value=True)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(True, section.isatty())
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.isatty = unittest.mock.Mock(return_value=True)
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.isatty()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_read(TestCase):
     def test_reads_all_bytes_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')
