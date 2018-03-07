@@ -13,6 +13,16 @@ class StreamSection(io.BufferedIOBase):
         self._startpos = stream.seek(0, io.SEEK_CUR)
         self._position = 0
 
+    def __enter__(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        return super().__enter__()
+
+    def __iter__(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        return super().__iter__()
+
     def fileno(self):
         if self.closed:
             raise ValueError('stream closed')

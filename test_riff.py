@@ -1066,9 +1066,10 @@ class Test_StreamSection_enter(TestCase):
         stream = io.BytesIO(b'SomeMockTestData')
         section = riff.StreamSection(stream, 8)
         section.close()
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as context:
             with section:
                 pass
+        self.assertEqual('stream closed', str(context.exception))
 
 
 class Test_StreamSection_exit(TestCase):
@@ -1173,6 +1174,50 @@ class Test_StreamSection_isatty(TestCase):
         section.close()
         with self.assertRaises(ValueError) as context:
             section.isatty()
+        self.assertEqual('stream closed', str(context.exception))
+
+
+class Test_StreamSection_iter(TestCase):
+    def test_returns_self(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        self.assertIs(section, iter(section))
+
+    def test_error_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            iter(section)
+        self.assertEqual('stream closed', str(context.exception))
+
+
+class Test_StreamSection_next(TestCase):
+    def test_reads_line(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mock\n', next(section))
+
+    def test_does_not_read_past_section_end(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', next(section))
+
+    def test_does_not_read_past_section_end_after_seek(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        self.assertEqual(b'Test', next(section))
+
+    def test_error_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            next(section)
         self.assertEqual('stream closed', str(context.exception))
 
 
