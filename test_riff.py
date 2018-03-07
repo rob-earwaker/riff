@@ -1277,6 +1277,52 @@ class Test_StreamSection_readable(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_readline(TestCase):
+    def test_reads_line_with_no_limit(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mock\n', section.readline())
+
+    def test_reads_line_with_None_limit(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mock\n', section.readline(None))
+
+    def test_reads_line_with_negative_limit(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mock\n', section.readline(-1))
+
+    def test_does_not_read_past_byte_limit(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mo', section.readline(2))
+
+    def test_does_not_read_past_section_end_with_no_limit(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.readline())
+
+    def test_does_not_read_past_section_end_with_limit(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.readline(12))
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.readline()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_seek(TestCase):
     def test_seeks_relative_to_start_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')
