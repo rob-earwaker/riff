@@ -1296,7 +1296,19 @@ class Test_StreamSection_readline(TestCase):
         section = riff.StreamSection(stream, 10)
         self.assertEqual(b'Mock\n', section.readline(-1))
 
-    def test_does_not_read_past_byte_limit(self):
+    def test_can_call_with_limit_keyword(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'Mo', section.readline(limit=2))
+
+    def test_does_not_read_past_zero_byte_limit(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual(b'', section.readline(0))
+
+    def test_does_not_read_past_positive_byte_limit(self):
         stream = io.BytesIO(b'SomeMock\nTest\nData')
         stream.seek(4)
         section = riff.StreamSection(stream, 10)
@@ -1307,6 +1319,13 @@ class Test_StreamSection_readline(TestCase):
         stream.seek(4)
         section = riff.StreamSection(stream, 8)
         self.assertEqual(b'MockTest', section.readline())
+
+    def test_does_not_read_past_section_end_after_seek(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        self.assertEqual(b'Test', section.readline())
 
     def test_does_not_read_past_section_end_with_limit(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1320,6 +1339,77 @@ class Test_StreamSection_readline(TestCase):
         section.close()
         with self.assertRaises(ValueError) as context:
             section.readline()
+        self.assertEqual('stream closed', str(context.exception))
+
+
+class Test_StreamSection_readlines(TestCase):
+    def test_reads_lines_with_no_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n', b'Test\n'], section.readlines())
+
+    def test_reads_lines_with_None_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n', b'Test\n'], section.readlines(None))
+
+    def test_reads_lines_with_negative_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n', b'Test\n'], section.readlines(-1))
+
+    def test_can_call_with_hint_keyword(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n'], section.readlines(hint=2))
+
+    def test_reads_single_line_for_zero_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n'], section.readlines(0))
+
+    def test_does_reads_single_line_when_hint_less_than_line_size(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n'], section.readlines(2))
+
+    def test_does_reads_multiple_lines_with_positive_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTest\nData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 10)
+        self.assertEqual([b'Mock\n', b'Test\n'], section.readlines(7))
+
+    def test_does_not_read_past_section_end_with_no_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 9)
+        self.assertEqual([b'Mock\n', b'Test'], section.readlines())
+
+    def test_does_not_read_past_section_end_after_seek(self):
+        stream = io.BytesIO(b'SomeMock\nTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 9)
+        section.seek(2)
+        self.assertEqual([b'ck\n', b'Test'], section.readlines())
+
+    def test_does_not_read_past_section_end_with_positive_hint(self):
+        stream = io.BytesIO(b'SomeMock\nTestData')
+        stream.seek(4)
+        section = riff.StreamSection(stream, 9)
+        self.assertEqual([b'Mock\n', b'Test'], section.readlines(12))
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.readlines()
         self.assertEqual('stream closed', str(context.exception))
 
 

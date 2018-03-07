@@ -42,6 +42,14 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return self._stream.readable()
 
+    def readline(self, limit=None):
+        return super().readline(limit)
+
+    def readlines(self, hint=None):
+        if self.closed:
+            raise ValueError('stream closed')
+        return [self.readline()] if hint == 0 else super().readlines(hint)
+
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
             raise ValueError('stream closed')
@@ -73,7 +81,7 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return False
 
-    def write(self, lines):
+    def write(self, buffer):
         if self.closed:
             raise ValueError('stream closed')
         raise io.UnsupportedOperation('stream not writable')
