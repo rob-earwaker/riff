@@ -63,6 +63,11 @@ class StreamSection(io.BufferedIOBase):
     def tell(self):
         return self.seek(0, io.SEEK_CUR)
 
+    def truncate(self, size=None):
+        if self.closed:
+            raise ValueError('stream closed')
+        raise io.UnsupportedOperation('stream not writable')
+
 
 class ChunkData(io.BufferedIOBase):
     def __init__(self, stream, size):

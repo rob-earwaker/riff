@@ -1406,5 +1406,29 @@ class Test_StreamSection_tell(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_tell(TestCase):
+    def test_raises_error_for_default_size(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(io.UnsupportedOperation) as context:
+            section.truncate()
+        self.assertEqual('stream not writable', str(context.exception))
+
+    def test_raises_error_when_size_specified(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(io.UnsupportedOperation) as context:
+            section.truncate(4)
+        self.assertEqual('stream not writable', str(context.exception))
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.truncate()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 if __name__ == '__main__':
     unittest.main()
