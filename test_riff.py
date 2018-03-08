@@ -1758,6 +1758,13 @@ class Test_StreamSection_readlines(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_repr(TestCase):
+    def test(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, size=8, startpos=4)
+        self.assertEqual("riff.StreamSection(size=8)", repr(section))
+
+
 class Test_StreamSection_seek(TestCase):
     def test_seeks_relative_to_start_by_default(self):
         stream = io.BytesIO(b'SomeMockTestData')

@@ -37,6 +37,9 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return super().__iter__()
 
+    def __repr__(self):
+        return 'riff.StreamSection(size={0})'.format(self.size)
+
     @property
     def closed(self):
         return super().closed or self._stream.closed
