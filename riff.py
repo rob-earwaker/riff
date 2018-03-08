@@ -60,14 +60,6 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return self._stream.readable()
 
-    def readinto(self, buffer):
-        if self.closed:
-            raise ValueError('stream closed')
-        return super().readinto(buffer)
-
-    def readline(self, limit=None):
-        return super().readline(limit)
-
     def readlines(self, hint=None):
         if self.closed:
             raise ValueError('stream closed')
