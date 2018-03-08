@@ -1126,26 +1126,6 @@ class Test_StreamSection_closed(TestCase):
         self.assertTrue(section.closed)
 
 
-class Test_StreamSection_del(TestCase):
-    def test_closes_self(self):
-        stream = io.BytesIO(b'SomeMockTestData')
-        section = riff.StreamSection(stream, 8)
-        section.__del__()
-        self.assertTrue(section.closed)
-
-    def test_can_be_called_multiple_times(self):
-        stream = io.BytesIO(b'SomeMockTestData')
-        section = riff.StreamSection(stream, 8)
-        section.__del__()
-        section.__del__()
-
-    def test_does_not_close_stream(self):
-        stream = io.BytesIO(b'SomeMockTestData')
-        section = riff.StreamSection(stream, 8)
-        section.__del__()
-        self.assertFalse(stream.closed)
-
-
 class Test_StreamSection_detach(TestCase):
     def test_raises_error(self):
         stream = io.BytesIO(b'SomeMockTestData')
