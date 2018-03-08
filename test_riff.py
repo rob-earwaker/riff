@@ -1146,6 +1146,33 @@ class Test_StreamSection_del(TestCase):
         self.assertFalse(stream.closed)
 
 
+class Test_StreamSection_detach(TestCase):
+    def test_raises_error(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaises(io.UnsupportedOperation) as context:
+            section.detach()
+        self.assertEqual('stream not detachable', str(context.exception))
+
+    def test_does_not_call_stream_detach_method(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.detach = unittest.mock.Mock()
+        section = riff.StreamSection(stream, 8)
+        try:
+            section.detach()
+        except io.UnsupportedOperation:
+            pass
+        stream.detach.assert_not_called()
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.detach()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_fileno(TestCase):
     def test_returns_stream_fileno(self):
         stream = io.BytesIO(b'SomeMockTestData')

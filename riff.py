@@ -23,6 +23,11 @@ class StreamSection(io.BufferedIOBase):
             raise ValueError('stream closed')
         return super().__iter__()
 
+    def detach(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        raise io.UnsupportedOperation('stream not detachable')
+
     def fileno(self):
         if self.closed:
             raise ValueError('stream closed')
