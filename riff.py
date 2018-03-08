@@ -74,6 +74,11 @@ class StreamSection(io.BufferedIOBase):
         self._position = max(0, min(position, self.size))
         return self._position
 
+    def seekable(self):
+        if self.closed:
+            raise ValueError('stream closed')
+        return self._stream.seekable()
+
     @property
     def size(self):
         return self._size

@@ -1576,6 +1576,24 @@ class Test_StreamSection_seek(TestCase):
         self.assertEqual('stream closed', str(context.exception))
 
 
+class Test_StreamSection_seekable(TestCase):
+    def test_returns_whether_stream_seekable(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        mock = unittest.mock.Mock()
+        stream.seekable = unittest.mock.Mock(return_value=mock)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(mock, section.seekable())
+
+    def test_ValueError_if_closed(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.seekable = unittest.mock.Mock()
+        section = riff.StreamSection(stream, 8)
+        section.close()
+        with self.assertRaises(ValueError) as context:
+            section.seekable()
+        self.assertEqual('stream closed', str(context.exception))
+
+
 class Test_StreamSection_size(TestCase):
     def test_returns_input_size(self):
         stream = io.BytesIO(b'SomeMockTestData')
