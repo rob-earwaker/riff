@@ -7,11 +7,25 @@ class Error(Exception):
 
 
 class StreamSection(io.BufferedIOBase):
-    def __init__(self, stream, size):
+    def __init__(self, stream, size, startpos):
         self._stream = stream
         self._size = size
-        self._startpos = stream.seek(0, io.SEEK_CUR)
+        self._startpos = startpos
         self._position = 0
+
+    @classmethod
+    def readfrom(cls, stream, size):
+        buffer = stream.read(size)
+        if len(buffer) < size:
+            raise Error('truncated at position {}'.format(len(buffer)))
+        stream = io.BytesIO(buffer)
+        return cls(stream, size, startpos=0)
+
+    @classmethod
+    def streamfrom(cls, stream, size):
+        startpos = stream.seek(0, io.SEEK_CUR)
+        stream.seek(size, io.SEEK_CUR)
+        return cls(stream, size, startpos)
 
     def __enter__(self):
         if self.closed:
@@ -22,6 +36,10 @@ class StreamSection(io.BufferedIOBase):
         if self.closed:
             raise ValueError('stream closed')
         return super().__iter__()
+
+    @property
+    def closed(self):
+        return super().closed or self._stream.closed
 
     def detach(self):
         if self.closed:
