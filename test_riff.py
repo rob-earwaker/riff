@@ -1331,6 +1331,115 @@ class Test_StreamSection_read(TestCase):
         self.assertEqual(b'Test', section.read(4))
 
 
+class Test_StreamSection_read1(TestCase):
+    def test_does_not_require_raw_stream_read1_attr(self):
+        stream = io.BytesIO(b'SomeMockTestData')
+        stream.read1 = unittest.mock.Mock(side_effect=AttributeError)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read1())
+
+    def test_reads_all_bytes_by_default(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read1())
+
+    def test_reads_all_bytes_for_negative_size(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read1(-1))
+
+    def test_reads_all_bytes_for_None_size(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read1(None))
+
+    def test_no_bytes_when_size_is_zero(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'', section.read1(0))
+
+    def test_read_less_than_buffer_size_bytes(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=5)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'Mock', section.read1(4))
+
+    def test_read_more_than_buffer_size_bytes(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=3)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'Mock', section.read1(4))
+
+    def test_reading_past_end_only_returns_size_bytes(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        self.assertEqual(b'MockTest', section.read1(9))
+
+    def test_reading_past_end_moves_cursor_to_end(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read1(9)
+        self.assertEqual(8, section.tell())
+
+    def test_reading_moves_cursor_forward_by_size(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read1(4)
+        self.assertEqual(4, section.tell())
+
+    def test_reading_all_moves_cursor_to_end(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.read1()
+        self.assertEqual(8, section.tell())
+
+    def test_error_when_section_truncated(self):
+        raw = io.BytesIO(b'SomeMoc')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        with self.assertRaisesError('truncated at position 3'):
+            section.read1(4)
+
+    def test_advances_cursor_despite_truncation(self):
+        raw = io.BytesIO(b'SomeMoc')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        try:
+            section.read1(4)
+        except riff.Error:
+            pass
+        self.assertEqual(3, section.tell())
+
+    def test_reads_from_cursor_position(self):
+        raw = io.BytesIO(b'SomeMockTestData')
+        stream = io.BufferedReader(raw, buffer_size=4)
+        stream.seek(4)
+        section = riff.StreamSection(stream, 8)
+        section.seek(4)
+        self.assertEqual(b'Test', section.read1(4))
+
+
 class Test_StreamSection_readable(TestCase):
     def test_returns_whether_stream_readable(self):
         stream = io.BytesIO(b'SomeMockTestData')
