@@ -61,6 +61,35 @@ class Test_Chunk_padded(unittest.TestCase):
         self.assertFalse(chunk.padded)
 
 
+class Test_Chunk_readfrom(unittest.TestCase):
+    def test_returns_Chunk_instance(self):
+        stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
+        chunk = riff.Chunk.readfrom(stream)
+        self.assertIsInstance(chunk, riff.Chunk)
+
+    def test_no_error_with_empty_chunk(self):
+        stream = io.BytesIO(b'MOCK\x00\x00\x00\x00')
+        riff.Chunk.readfrom(stream)
+
+    def test_error_when_id_truncated(self):
+        stream = io.BytesIO(b'MOC')
+        with self.assertRaises(riff.Error) as ctx:
+            riff.Chunk.readfrom(stream)
+        self.assertEqual('chunk header truncated', str(ctx.exception))
+
+    def test_error_when_size_truncated(self):
+        stream = io.BytesIO(b'MOCK\x08\x00')
+        with self.assertRaises(riff.Error) as ctx:
+            riff.Chunk.readfrom(stream)
+        self.assertEqual('chunk header truncated', str(ctx.exception))
+
+    def test_error_when_id_not_ascii(self):
+        stream = io.BytesIO(b'M\xffCK\x08\x00\x00\x00MockData')
+        with self.assertRaises(riff.Error) as ctx:
+            riff.Chunk.readfrom(stream)
+        self.assertEqual('chunk id not ascii-decodable', str(ctx.exception))
+
+
 class Test_Chunk_repr(unittest.TestCase):
     def test_for_unpadded_chunk_read_from_stream(self):
         stream = io.BytesIO(b'MOCK\x08\x00\x00\x00MockData')
