@@ -199,6 +199,9 @@ class Chunk:
         padbyte = stream.read(cls.PAD_SIZE) if padded else b''
         return cls(header, data, padbyte)
 
+    def __repr__(self):
+        return "riff.Chunk(id='{}', size={})".format(self.id, self.size)
+
     @property
     def data(self):
         return self._data
@@ -214,6 +217,3 @@ class Chunk:
     @property
     def size(self):
         return self._header.size
-
-    def __repr__(self):
-        return "riff.Chunk(id='{}', size={})".format(self.id, self.size)
