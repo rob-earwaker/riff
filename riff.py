@@ -218,8 +218,8 @@ class RiffChunk:
         self._subchunks = subchunks
 
     @classmethod
-    def streamfrom(cls, iostream):
-        chunk = Chunk.streamfrom(iostream)
+    def readfrom(cls, iostream, stream=False):
+        chunk = Chunk.readfrom(iostream, stream)
         if chunk.id != cls.ID:
             raise Error("unexpected chunk id '{}'".format(chunk.id))
         buffer = chunk.data.read(cls.FORMAT_STRUCT.size)
@@ -232,7 +232,7 @@ class RiffChunk:
             raise Error('riff chunk format not ascii-decodable') from error
         subchunks = []
         while chunk.data.tell() < chunk.data.size:
-            subchunk = Chunk.streamfrom(chunk.data)
+            subchunk = Chunk.readfrom(chunk.data, stream)
             subchunks.append(subchunk)
         return cls(chunk.size, format, subchunks)
 
