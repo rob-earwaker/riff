@@ -217,3 +217,48 @@ class Chunk:
     @property
     def size(self):
         return self._header.size
+
+
+class RiffChunk:
+    FORMAT_STRUCT = struct.Struct('4s')
+    ID = 'RIFF'
+
+    def __init__(self, size, format, subchunks):
+        self._size = size
+        self._format = format
+        self._subchunks = subchunks
+
+    @classmethod
+    def streamfrom(cls, stream):
+        chunk = Chunk.streamfrom(stream)
+        if chunk.id != cls.ID:
+            raise Error("unexpected chunk id '{}'".format(chunk.id))
+        buffer = chunk.data.read(cls.FORMAT_STRUCT.size)
+        if len(buffer) < cls.FORMAT_STRUCT.size:
+            raise Error('riff chunk format truncated')
+        formatbytes, = cls.FORMAT_STRUCT.unpack(buffer)
+        try:
+            format = formatbytes.decode('ascii')
+        except UnicodeDecodeError as error:
+            raise Error('riff chunk format not ascii-decodable') from error
+        subchunks = []
+        while chunk.data.tell() < chunk.data.size:
+            subchunk = Chunk.streamfrom(chunk.data)
+            subchunks.append(subchunk)
+        return cls(chunk.size, format, subchunks)
+
+    @property
+    def format(self):
+        return self._format
+
+    @property
+    def id(self):
+        return self.ID
+
+    @property
+    def size(self):
+        return self._size
+
+    def subchunks(self):
+        for subchunk in self._subchunks:
+            yield subchunk
