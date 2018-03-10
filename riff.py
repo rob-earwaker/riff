@@ -47,14 +47,6 @@ class ChunkData(io.BufferedIOBase):
         self._position = 0
 
     @classmethod
-    def readfrom(cls, iostream, size):
-        buffer = iostream.read(size)
-        if len(buffer) < size:
-            raise Error('truncated at position {}'.format(len(buffer)))
-        iostream = io.BytesIO(buffer)
-        return cls(iostream, size, startpos=0)
-
-    @classmethod
     def streamfrom(cls, iostream, size):
         startpos = iostream.seek(0, io.SEEK_CUR)
         iostream.seek(size, io.SEEK_CUR)
@@ -184,16 +176,13 @@ class Chunk:
         return cls(header, data, padbyte)
 
     @classmethod
-    def readfrom(cls, iostream):
+    def readfrom(cls, iostream, stream=False):
         header = ChunkHeader.readfrom(iostream)
-        data = ChunkData.readfrom(iostream, header.size)
-        padded = header.size % 2 != 0
-        padbyte = iostream.read(cls.PAD_SIZE) if padded else b''
-        return cls(header, data, padbyte)
-
-    @classmethod
-    def streamfrom(cls, iostream):
-        header = ChunkHeader.readfrom(iostream)
+        if not stream:
+            buffer = iostream.read(header.size)
+            if len(buffer) < header.size:
+                raise Error('chunk data truncated')
+            iostream = io.BytesIO(buffer)
         data = ChunkData.streamfrom(iostream, header.size)
         padded = header.size % 2 != 0
         padbyte = iostream.read(cls.PAD_SIZE) if padded else b''
