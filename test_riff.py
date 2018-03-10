@@ -230,7 +230,7 @@ class Test_ChunkData_enter(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             with data:
                 pass
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_exit(unittest.TestCase):
@@ -256,7 +256,7 @@ class Test_ChunkData_detach(unittest.TestCase):
         data = riff.ChunkData.streamfrom(stream, size=8)
         with self.assertRaises(io.UnsupportedOperation) as ctx:
             data.detach()
-        self.assertEqual('stream not detachable', str(ctx.exception))
+        self.assertEqual('io stream not detachable', str(ctx.exception))
 
     def test_does_not_call_stream_detach_method(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -276,7 +276,7 @@ class Test_ChunkData_detach(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.detach()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_fileno(unittest.TestCase):
@@ -296,7 +296,7 @@ class Test_ChunkData_fileno(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.fileno()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_flush(unittest.TestCase):
@@ -313,7 +313,7 @@ class Test_ChunkData_flush(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.flush()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_isatty(unittest.TestCase):
@@ -333,7 +333,7 @@ class Test_ChunkData_isatty(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.isatty()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_iter(unittest.TestCase):
@@ -350,7 +350,7 @@ class Test_ChunkData_iter(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             iter(data)
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_next(unittest.TestCase):
@@ -380,7 +380,7 @@ class Test_ChunkData_next(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             next(data)
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_read(unittest.TestCase):
@@ -473,7 +473,7 @@ class Test_ChunkData_read(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.read(4)
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_read1(unittest.TestCase):
@@ -593,7 +593,7 @@ class Test_ChunkData_read1(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.read1(4)
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_readable(unittest.TestCase):
@@ -613,7 +613,7 @@ class Test_ChunkData_readable(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.readable()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_readfrom(unittest.TestCase):
@@ -745,7 +745,7 @@ class Test_ChunkData_readinto(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.readinto(bytearray())
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_readinto1(unittest.TestCase):
@@ -837,7 +837,7 @@ class Test_ChunkData_readinto1(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.readinto1(bytearray())
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_readline(unittest.TestCase):
@@ -897,7 +897,7 @@ class Test_ChunkData_readline(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.readline()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_readlines(unittest.TestCase):
@@ -963,7 +963,7 @@ class Test_ChunkData_readlines(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.readlines()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_repr(unittest.TestCase):
@@ -1071,7 +1071,7 @@ class Test_ChunkData_seek(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.seek(4)
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_seekable(unittest.TestCase):
@@ -1091,7 +1091,7 @@ class Test_ChunkData_seekable(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.seekable()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_size(unittest.TestCase):
@@ -1158,7 +1158,7 @@ class Test_ChunkData_tell(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.tell()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_truncate(unittest.TestCase):
@@ -1168,7 +1168,7 @@ class Test_ChunkData_truncate(unittest.TestCase):
         data = riff.ChunkData.streamfrom(stream, size=8)
         with self.assertRaises(io.UnsupportedOperation) as ctx:
             data.truncate()
-        self.assertEqual('stream not writable', str(ctx.exception))
+        self.assertEqual('io stream not writable', str(ctx.exception))
 
     def test_raises_error_when_size_specified(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1176,7 +1176,7 @@ class Test_ChunkData_truncate(unittest.TestCase):
         data = riff.ChunkData.streamfrom(stream, size=8)
         with self.assertRaises(io.UnsupportedOperation) as ctx:
             data.truncate(4)
-        self.assertEqual('stream not writable', str(ctx.exception))
+        self.assertEqual('io stream not writable', str(ctx.exception))
 
     def test_ValueError_if_closed(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1185,7 +1185,7 @@ class Test_ChunkData_truncate(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.truncate()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_writable(unittest.TestCase):
@@ -1203,7 +1203,7 @@ class Test_ChunkData_writable(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.writable()
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_writelines(unittest.TestCase):
@@ -1213,7 +1213,7 @@ class Test_ChunkData_writelines(unittest.TestCase):
         data = riff.ChunkData.streamfrom(stream, size=8)
         with self.assertRaises(io.UnsupportedOperation) as ctx:
             data.writelines([b'Line1\n', b'Line2\n'])
-        self.assertEqual('stream not writable', str(ctx.exception))
+        self.assertEqual('io stream not writable', str(ctx.exception))
 
     def test_does_not_call_stream_writelines_method(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1233,7 +1233,7 @@ class Test_ChunkData_writelines(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.writelines([b'Line1\n', b'Line2\n'])
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_write(unittest.TestCase):
@@ -1243,7 +1243,7 @@ class Test_ChunkData_write(unittest.TestCase):
         data = riff.ChunkData.streamfrom(stream, size=8)
         with self.assertRaises(io.UnsupportedOperation) as ctx:
             data.write(b'Data')
-        self.assertEqual('stream not writable', str(ctx.exception))
+        self.assertEqual('io stream not writable', str(ctx.exception))
 
     def test_does_not_call_stream_write_method(self):
         stream = io.BytesIO(b'SomeMockTestData')
@@ -1263,7 +1263,7 @@ class Test_ChunkData_write(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.write(b'Data')
-        self.assertEqual('stream closed', str(ctx.exception))
+        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 if __name__ == '__main__':

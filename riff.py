@@ -14,8 +14,8 @@ class ChunkHeader:
         self._size = size
 
     @classmethod
-    def readfrom(cls, stream):
-        buffer = stream.read(cls.HEADER_STRUCT.size)
+    def readfrom(cls, iostream):
+        buffer = iostream.read(cls.HEADER_STRUCT.size)
         if len(buffer) < cls.HEADER_STRUCT.size:
             raise Error('chunk header truncated')
         idbytes, size = cls.HEADER_STRUCT.unpack(buffer)
@@ -33,41 +33,41 @@ class ChunkHeader:
     def size(self):
         return self._size
 
-    def writeto(self, stream):
+    def writeto(self, iostream):
         idbytes = self.id.encode('ascii')
         buffer = self.HEADER_STRUCT.pack(idbytes, self.size)
-        stream.write(buffer)
+        iostream.write(buffer)
 
 
 class ChunkData(io.BufferedIOBase):
-    def __init__(self, stream, size, startpos):
-        self._stream = stream
+    def __init__(self, iostream, size, startpos):
+        self._iostream = iostream
         self._size = size
         self._startpos = startpos
         self._position = 0
 
     @classmethod
-    def readfrom(cls, stream, size):
-        buffer = stream.read(size)
+    def readfrom(cls, iostream, size):
+        buffer = iostream.read(size)
         if len(buffer) < size:
             raise Error('truncated at position {}'.format(len(buffer)))
-        stream = io.BytesIO(buffer)
-        return cls(stream, size, startpos=0)
+        iostream = io.BytesIO(buffer)
+        return cls(iostream, size, startpos=0)
 
     @classmethod
-    def streamfrom(cls, stream, size):
-        startpos = stream.seek(0, io.SEEK_CUR)
-        stream.seek(size, io.SEEK_CUR)
-        return cls(stream, size, startpos)
+    def streamfrom(cls, iostream, size):
+        startpos = iostream.seek(0, io.SEEK_CUR)
+        iostream.seek(size, io.SEEK_CUR)
+        return cls(iostream, size, startpos)
 
     def __enter__(self):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
         return super().__enter__()
 
     def __iter__(self):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
         return super().__iter__()
 
     def __repr__(self):
@@ -75,32 +75,32 @@ class ChunkData(io.BufferedIOBase):
 
     @property
     def closed(self):
-        return super().closed or self._stream.closed
+        return super().closed or self._iostream.closed
 
     def detach(self):
         if self.closed:
-            raise ValueError('stream closed')
-        raise io.UnsupportedOperation('stream not detachable')
+            raise ValueError('io stream closed')
+        raise io.UnsupportedOperation('io stream not detachable')
 
     def fileno(self):
         if self.closed:
-            raise ValueError('stream closed')
-        return self._stream.fileno()
+            raise ValueError('io stream closed')
+        return self._iostream.fileno()
 
     def flush(self):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
 
     def isatty(self):
         if self.closed:
-            raise ValueError('stream closed')
-        return self._stream.isatty()
+            raise ValueError('io stream closed')
+        return self._iostream.isatty()
 
     def read(self, size=None):
-        self._stream.seek(self._startpos + self.tell(), io.SEEK_SET)
+        self._iostream.seek(self._startpos + self.tell(), io.SEEK_SET)
         maxsize = self.size - self.tell()
         size = maxsize if size is None or size < 0 else min(size, maxsize)
-        buffer = self._stream.read(size)
+        buffer = self._iostream.read(size)
         self._position += len(buffer)
         if len(buffer) < size:
             raise Error('truncated at position {}'.format(self.tell()))
@@ -111,17 +111,17 @@ class ChunkData(io.BufferedIOBase):
 
     def readable(self):
         if self.closed:
-            raise ValueError('stream closed')
-        return self._stream.readable()
+            raise ValueError('io stream closed')
+        return self._iostream.readable()
 
     def readlines(self, hint=None):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
         return [self.readline()] if hint == 0 else super().readlines(hint)
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
         if whence == io.SEEK_SET:
             position = offset
         elif whence == io.SEEK_CUR:
@@ -135,8 +135,8 @@ class ChunkData(io.BufferedIOBase):
 
     def seekable(self):
         if self.closed:
-            raise ValueError('stream closed')
-        return self._stream.seekable()
+            raise ValueError('io stream closed')
+        return self._iostream.seekable()
 
     @property
     def size(self):
@@ -147,23 +147,23 @@ class ChunkData(io.BufferedIOBase):
 
     def truncate(self, size=None):
         if self.closed:
-            raise ValueError('stream closed')
-        raise io.UnsupportedOperation('stream not writable')
+            raise ValueError('io stream closed')
+        raise io.UnsupportedOperation('io stream not writable')
 
     def writable(self):
         if self.closed:
-            raise ValueError('stream closed')
+            raise ValueError('io stream closed')
         return False
 
     def write(self, buffer):
         if self.closed:
-            raise ValueError('stream closed')
-        raise io.UnsupportedOperation('stream not writable')
+            raise ValueError('io stream closed')
+        raise io.UnsupportedOperation('io stream not writable')
 
     def writelines(self, lines):
         if self.closed:
-            raise ValueError('stream closed')
-        raise io.UnsupportedOperation('stream not writable')
+            raise ValueError('io stream closed')
+        raise io.UnsupportedOperation('io stream not writable')
 
 
 class Chunk:
@@ -184,19 +184,19 @@ class Chunk:
         return cls(header, data, padbyte)
 
     @classmethod
-    def readfrom(cls, stream):
-        header = ChunkHeader.readfrom(stream)
-        data = ChunkData.readfrom(stream, header.size)
+    def readfrom(cls, iostream):
+        header = ChunkHeader.readfrom(iostream)
+        data = ChunkData.readfrom(iostream, header.size)
         padded = header.size % 2 != 0
-        padbyte = stream.read(cls.PAD_SIZE) if padded else b''
+        padbyte = iostream.read(cls.PAD_SIZE) if padded else b''
         return cls(header, data, padbyte)
 
     @classmethod
-    def streamfrom(cls, stream):
-        header = ChunkHeader.readfrom(stream)
-        data = ChunkData.streamfrom(stream, header.size)
+    def streamfrom(cls, iostream):
+        header = ChunkHeader.readfrom(iostream)
+        data = ChunkData.streamfrom(iostream, header.size)
         padded = header.size % 2 != 0
-        padbyte = stream.read(cls.PAD_SIZE) if padded else b''
+        padbyte = iostream.read(cls.PAD_SIZE) if padded else b''
         return cls(header, data, padbyte)
 
     def __repr__(self):
@@ -229,8 +229,8 @@ class RiffChunk:
         self._subchunks = subchunks
 
     @classmethod
-    def streamfrom(cls, stream):
-        chunk = Chunk.streamfrom(stream)
+    def streamfrom(cls, iostream):
+        chunk = Chunk.streamfrom(iostream)
         if chunk.id != cls.ID:
             raise Error("unexpected chunk id '{}'".format(chunk.id))
         buffer = chunk.data.read(cls.FORMAT_STRUCT.size)
