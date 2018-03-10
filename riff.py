@@ -203,12 +203,44 @@ class ChunkData(io.BufferedIOBase):
         return 'riff.ChunkData(size={0})'.format(self.size)
 
 
-class Chunk:
+class ChunkHeader:
     HEADER_STRUCT = struct.Struct('<4sI')
+
+    def __init__(self, id, size):
+        self._id = id
+        self._size = size
+
+    @classmethod
+    def readfrom(cls, stream):
+        buffer = stream.read(cls.HEADER_STRUCT.size)
+        if len(buffer) < cls.HEADER_STRUCT.size:
+            raise Error('chunk header truncated')
+        idbytes, size = cls.HEADER_STRUCT.unpack(buffer)
+        try:
+            id = idbytes.decode('ascii')
+        except UnicodeDecodeError as error:
+            raise Error('chunk id not ascii-decodable') from error
+        return cls(id, size)
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def size(self):
+        return self._size
+
+    def writeto(self, stream):
+        idbytes = self.id.encode('ascii')
+        buffer = self.HEADER_STRUCT.pack(idbytes, self.size)
+        stream.write(buffer)
+
+
+class Chunk:
     PAD_SIZE = 1
 
-    def __init__(self, id, data, stream, padbyte):
-        self._id = id
+    def __init__(self, header, data, stream, padbyte):
+        self._header = header
         self._data = data
         self._stream = stream
         self._padbyte = padbyte
@@ -216,41 +248,28 @@ class Chunk:
 
     @classmethod
     def create(cls, id, size, datastream):
+        header = ChunkHeader(id, size)
         data = ChunkData(datastream, size)
         padded = size % 2 != 0
         padbyte = b'\x00' if padded else b''
-        return cls(id, data, datastream, padbyte)
+        return cls(header, data, datastream, padbyte)
 
     @classmethod
     def readfrom(cls, stream):
-        bytestr = stream.read(cls.HEADER_STRUCT.size)
-        if len(bytestr) < cls.HEADER_STRUCT.size:
-            raise Error('chunk header truncated')
-        idbytes, size = cls.HEADER_STRUCT.unpack(bytestr)
-        try:
-            id = idbytes.decode('ascii')
-        except UnicodeDecodeError as error:
-            raise Error('chunk id not ascii-decodable') from error
-        datastream = io.BytesIO(stream.read(size))
-        data = ChunkData(datastream, size)
-        padded = size % 2 != 0
+        header = ChunkHeader.readfrom(stream)
+        datastream = io.BytesIO(stream.read(header.size))
+        data = ChunkData(datastream, header.size)
+        padded = header.size % 2 != 0
         padbyte = stream.read(cls.PAD_SIZE) if padded else b''
-        return cls(id, data, stream, padbyte)
+        return cls(header, data, stream, padbyte)
 
     @classmethod
     def streamfrom(cls, stream):
-        bytestr = stream.read(cls.HEADER_STRUCT.size)
-        if len(bytestr) < cls.HEADER_STRUCT.size:
-            raise Error('chunk header truncated')
-        idbytes, size = cls.HEADER_STRUCT.unpack(bytestr)
-        try:
-            id = idbytes.decode('ascii')
-        except UnicodeDecodeError as error:
-            raise Error('chunk id not ascii-decodable') from error
-        data = ChunkData(stream, size)
-        padded = size % 2 != 0
+        header = ChunkHeader.readfrom(stream)
+        data = ChunkData(stream, header.size)
+        padded = header.size % 2 != 0
         padbyte = None if padded else b''
-        return cls(id, data, stream, padbyte)
+        return cls(header, data, stream, padbyte)
 
     @property
     def consumed(self):
@@ -262,7 +281,7 @@ class Chunk:
 
     @property
     def id(self):
-        return self._id
+        return self._header.id
 
     @property
     def padded(self):
@@ -270,12 +289,12 @@ class Chunk:
 
     @property
     def size(self):
-        return self.data.size
+        return self._header.size
 
     @property
     def totalsize(self):
         padsize = 1 if self.padded else 0
-        return self.HEADER_STRUCT.size + self.data.size + padsize
+        return self._header.HEADER_STRUCT.size + self.data.size + padsize
 
     def readover(self, buffersize=1024):
         self.data.readoverall(buffersize)
@@ -314,9 +333,7 @@ class Chunk:
     def writeto(self, stream, buffersize=1024):
         if self.data.position != 0:
             raise Error('chunk partially consumed')
-        idbytes = self.id.encode('ascii')
-        headerbytes = self.HEADER_STRUCT.pack(idbytes, self.size)
-        stream.write(headerbytes)
+        self._header.writeto(stream)
         self.data.writeto(stream, buffersize)
         if self.padded:
             padbyte = self.readpadbyte()
