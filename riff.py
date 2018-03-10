@@ -167,6 +167,7 @@ class ChunkData(io.BufferedIOBase):
 
 
 class Chunk:
+    DEFAULT_PAD_BYTE = b'\x00'
     PAD_SIZE = 1
 
     def __init__(self, header, data, padbyte):
@@ -179,7 +180,7 @@ class Chunk:
         header = ChunkHeader(id, size)
         data = ChunkData.streamfrom(datastream, size)
         padded = size % 2 != 0
-        padbyte = b'\x00' if padded else b''
+        padbyte = cls.DEFAULT_PAD_BYTE if padded else b''
         return cls(header, data, padbyte)
 
     @classmethod
