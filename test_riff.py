@@ -1,6 +1,5 @@
 import io
 import riff
-import unittest
 import unittest.mock
 
 
