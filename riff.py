@@ -65,10 +65,6 @@ class ChunkData(io.BufferedIOBase):
     def __repr__(self):
         return 'riff.ChunkData(size={0})'.format(self.size)
 
-    @property
-    def closed(self):
-        return super().closed or self._iostream.closed
-
     def detach(self):
         if self.closed:
             raise ValueError('io stream closed')
