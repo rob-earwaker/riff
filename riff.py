@@ -39,7 +39,7 @@ class ChunkHeader:
         iostream.write(buffer)
 
 
-class ChunkData(io.BufferedIOBase):
+class ChunkData:
     def __init__(self, iostream, size, startpos):
         self._iostream = iostream
         self._size = size
@@ -66,8 +66,6 @@ class ChunkData(io.BufferedIOBase):
         return buffer
 
     def seek(self, offset, whence=io.SEEK_SET):
-        if self.closed:
-            raise ValueError('io stream closed')
         if whence == io.SEEK_SET:
             position = offset
         elif whence == io.SEEK_CUR:

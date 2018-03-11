@@ -150,75 +150,6 @@ class Test_Chunk_size(unittest.TestCase):
         self.assertEqual(11, chunk.size)
 
 
-class Test_ChunkData_close(unittest.TestCase):
-    def test_closes_self(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        self.assertTrue(data.closed)
-
-    def test_can_be_called_multiple_times(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        data.close()
-
-    def test_does_not_close_stream(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        self.assertFalse(iostream.closed)
-
-
-class Test_ChunkData_exit(unittest.TestCase):
-    def test_closes_self(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        with data:
-            pass
-        self.assertTrue(data.closed)
-
-    def test_does_not_close_stream(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        with riff.ChunkData.streamfrom(iostream, size=8):
-            pass
-        self.assertFalse(iostream.closed)
-
-
-class Test_ChunkData_next(unittest.TestCase):
-    def test_reads_line(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'Mock\n', next(data))
-
-    def test_does_not_read_past_data_end(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertEqual(b'MockTest', next(data))
-
-    def test_does_not_read_past_data_end_after_seek(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.seek(4)
-        self.assertEqual(b'Test', next(data))
-
-    def test_error_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            next(data)
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
 class Test_ChunkData_read(unittest.TestCase):
     def test_reads_all_bytes_by_default(self):
         iostream = io.BytesIO(b'SomeMockTestData')
@@ -301,167 +232,6 @@ class Test_ChunkData_read(unittest.TestCase):
         data = riff.ChunkData.streamfrom(iostream, size=8)
         data.seek(4)
         self.assertEqual(b'Test', data.read(4))
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.read(4)
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
-class Test_ChunkData_readinto(unittest.TestCase):
-    def test_reads_zero_bytes_into_empty_bytearray(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        buffer = bytearray()
-        self.assertEqual(0, data.readinto(buffer))
-        self.assertEqual(b'', bytes(buffer))
-
-    def test_reads_zero_bytes_into_empty_memoryview(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        buffer = memoryview(bytearray())
-        self.assertEqual(0, data.readinto(buffer))
-        self.assertEqual(b'', bytes(buffer.obj))
-
-    def test_reads_multiple_bytes_into_bytearray(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        buffer = bytearray(4)
-        self.assertEqual(4, data.readinto(buffer))
-        self.assertEqual(b'Mock', bytes(buffer))
-
-    def test_reads_multiple_bytes_into_memoryview(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        buffer = memoryview(bytearray(4))
-        self.assertEqual(4, data.readinto(buffer))
-        self.assertEqual(b'Mock', bytes(buffer.obj))
-
-    def test_only_reads_size_bytes_if_buffer_bigger_than_size(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        buffer = bytearray(10)
-        self.assertEqual(8, data.readinto(buffer))
-        self.assertEqual(b'MockTest\x00\x00', bytes(buffer))
-
-    def test_moves_cursor_to_end_if_buffer_bigger_than_size(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.readinto(bytearray(9))
-        self.assertEqual(8, data.tell())
-
-    def test_moves_cursor_forward_by_buffer_size(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.readinto(bytearray(4))
-        self.assertEqual(4, data.tell())
-
-    def test_error_when_data_truncated(self):
-        iostream = io.BytesIO(b'SomeMoc')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        with self.assertRaises(riff.Error) as ctx:
-            data.readinto(bytearray(4))
-        self.assertEqual('truncated at position 3', str(ctx.exception))
-
-    def test_advances_cursor_despite_truncation(self):
-        iostream = io.BytesIO(b'SomeMoc')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        try:
-            data.readinto(bytearray(4))
-        except riff.Error:
-            pass
-        self.assertEqual(3, data.tell())
-
-    def test_reads_from_cursor_position(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.seek(4)
-        buffer = bytearray(4)
-        self.assertEqual(4, data.readinto(buffer))
-        self.assertEqual(b'Test', bytes(buffer))
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.readinto(bytearray())
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
-class Test_ChunkData_readline(unittest.TestCase):
-    def test_reads_line_with_no_limit(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'Mock\n', data.readline())
-
-    def test_reads_line_with_None_limit(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'Mock\n', data.readline(None))
-
-    def test_reads_line_with_negative_limit(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'Mock\n', data.readline(-1))
-
-    def test_does_not_read_past_zero_byte_limit(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'', data.readline(0))
-
-    def test_does_not_read_past_positive_byte_limit(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual(b'Mo', data.readline(2))
-
-    def test_does_not_read_past_data_end_with_no_limit(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertEqual(b'MockTest', data.readline())
-
-    def test_does_not_read_past_data_end_after_seek(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.seek(4)
-        self.assertEqual(b'Test', data.readline())
-
-    def test_does_not_read_past_data_end_with_limit(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertEqual(b'MockTest', data.readline(12))
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.readline()
-        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_repr(unittest.TestCase):
@@ -562,15 +332,6 @@ class Test_ChunkData_seek(unittest.TestCase):
             data.seek(4, whence=3)
         self.assertEqual('invalid whence value', str(ctx.exception))
 
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.seek(4)
-        self.assertEqual('io stream closed', str(ctx.exception))
-
 
 class Test_ChunkData_size(unittest.TestCase):
     def test_returns_input_size(self):
@@ -592,12 +353,6 @@ class Test_ChunkData_streamfrom(unittest.TestCase):
         iostream.seek(4)
         data = riff.ChunkData.streamfrom(iostream, size=8)
         self.assertEqual(12, iostream.tell())
-
-    def test_not_closed_after_init(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertFalse(data.closed)
 
     def test_size_property_matches_input_size(self):
         iostream = io.BytesIO(b'SomeMockTestData')
@@ -621,15 +376,6 @@ class Test_ChunkData_tell(unittest.TestCase):
         position_before = data.tell()
         iostream.seek(10, io.SEEK_SET)
         self.assertEqual(position_before, data.tell())
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.tell()
-        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 if __name__ == '__main__':
