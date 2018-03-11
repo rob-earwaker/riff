@@ -65,25 +65,6 @@ class ChunkData(io.BufferedIOBase):
     def __repr__(self):
         return 'riff.ChunkData(size={0})'.format(self.size)
 
-    def detach(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        raise io.UnsupportedOperation('io stream not detachable')
-
-    def fileno(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return self._iostream.fileno()
-
-    def flush(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-
-    def isatty(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return self._iostream.isatty()
-
     def read(self, size=None):
         self._iostream.seek(self._startpos + self.tell(), io.SEEK_SET)
         maxsize = self.size - self.tell()
