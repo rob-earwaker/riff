@@ -65,11 +65,6 @@ class ChunkData(io.BufferedIOBase):
             raise Error('truncated at position {}'.format(self.tell()))
         return buffer
 
-    def readlines(self, hint=None):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return [self.readline()] if hint == 0 else super().readlines(hint)
-
     def seek(self, offset, whence=io.SEEK_SET):
         if self.closed:
             raise ValueError('io stream closed')
@@ -83,11 +78,6 @@ class ChunkData(io.BufferedIOBase):
             raise ValueError('invalid whence value')
         self._position = max(0, min(position, self.size))
         return self._position
-
-    def seekable(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return self._iostream.seekable()
 
     @property
     def size(self):

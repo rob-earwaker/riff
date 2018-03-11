@@ -464,72 +464,6 @@ class Test_ChunkData_readline(unittest.TestCase):
         self.assertEqual('io stream closed', str(ctx.exception))
 
 
-class Test_ChunkData_readlines(unittest.TestCase):
-    def test_reads_lines_with_no_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n', b'Test\n'], data.readlines())
-
-    def test_reads_lines_with_None_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n', b'Test\n'], data.readlines(None))
-
-    def test_reads_lines_with_negative_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n', b'Test\n'], data.readlines(-1))
-
-    def test_reads_single_line_for_zero_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n'], data.readlines(0))
-
-    def test_does_reads_single_line_when_hint_less_than_line_size(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n'], data.readlines(2))
-
-    def test_does_reads_multiple_lines_with_positive_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTest\nData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=10)
-        self.assertEqual([b'Mock\n', b'Test\n'], data.readlines(7))
-
-    def test_does_not_read_past_data_end_with_no_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=9)
-        self.assertEqual([b'Mock\n', b'Test'], data.readlines())
-
-    def test_does_not_read_past_data_end_after_seek(self):
-        iostream = io.BytesIO(b'SomeMock\nTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=9)
-        data.seek(2)
-        self.assertEqual([b'ck\n', b'Test'], data.readlines())
-
-    def test_does_not_read_past_data_end_with_positive_hint(self):
-        iostream = io.BytesIO(b'SomeMock\nTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=9)
-        self.assertEqual([b'Mock\n', b'Test'], data.readlines(12))
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.readlines()
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
 class Test_ChunkData_repr(unittest.TestCase):
     def test(self):
         iostream = io.BytesIO(b'SomeMockTestData')
@@ -635,26 +569,6 @@ class Test_ChunkData_seek(unittest.TestCase):
         data.close()
         with self.assertRaises(ValueError) as ctx:
             data.seek(4)
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
-class Test_ChunkData_seekable(unittest.TestCase):
-    def test_returns_whether_stream_seekable(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        mock = unittest.mock.Mock()
-        iostream.seekable = unittest.mock.Mock(return_value=mock)
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertEqual(mock, data.seekable())
-
-    def test_ValueError_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seekable = unittest.mock.Mock()
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            data.seekable()
         self.assertEqual('io stream closed', str(ctx.exception))
 
 
