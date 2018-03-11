@@ -86,26 +86,6 @@ class ChunkData(io.BufferedIOBase):
     def tell(self):
         return self.seek(0, io.SEEK_CUR)
 
-    def truncate(self, size=None):
-        if self.closed:
-            raise ValueError('io stream closed')
-        raise io.UnsupportedOperation('io stream not writable')
-
-    def writable(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return False
-
-    def write(self, buffer):
-        if self.closed:
-            raise ValueError('io stream closed')
-        raise io.UnsupportedOperation('io stream not writable')
-
-    def writelines(self, lines):
-        if self.closed:
-            raise ValueError('io stream closed')
-        raise io.UnsupportedOperation('io stream not writable')
-
 
 class Chunk:
     DEFAULT_PAD_BYTE = b'\x00'
