@@ -65,14 +65,6 @@ class ChunkData(io.BufferedIOBase):
             raise Error('truncated at position {}'.format(self.tell()))
         return buffer
 
-    def read1(self, size=None):
-        return self.read(size)
-
-    def readable(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return self._iostream.readable()
-
     def readlines(self, hint=None):
         if self.closed:
             raise ValueError('io stream closed')
