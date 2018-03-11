@@ -52,16 +52,6 @@ class ChunkData(io.BufferedIOBase):
         iostream.seek(size, io.SEEK_CUR)
         return cls(iostream, size, startpos)
 
-    def __enter__(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return super().__enter__()
-
-    def __iter__(self):
-        if self.closed:
-            raise ValueError('io stream closed')
-        return super().__iter__()
-
     def __repr__(self):
         return 'riff.ChunkData(size={0})'.format(self.size)
 

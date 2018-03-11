@@ -173,25 +173,6 @@ class Test_ChunkData_close(unittest.TestCase):
         self.assertFalse(iostream.closed)
 
 
-class Test_ChunkData_enter(unittest.TestCase):
-    def test_returns_self(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        with data as ctx:
-            self.assertIs(data, ctx)
-
-    def test_error_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            with data:
-                pass
-        self.assertEqual('io stream closed', str(ctx.exception))
-
-
 class Test_ChunkData_exit(unittest.TestCase):
     def test_closes_self(self):
         iostream = io.BytesIO(b'SomeMockTestData')
@@ -206,23 +187,6 @@ class Test_ChunkData_exit(unittest.TestCase):
         with riff.ChunkData.streamfrom(iostream, size=8):
             pass
         self.assertFalse(iostream.closed)
-
-
-class Test_ChunkData_iter(unittest.TestCase):
-    def test_returns_self(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        self.assertIs(data, iter(data))
-
-    def test_error_if_closed(self):
-        iostream = io.BytesIO(b'SomeMockTestData')
-        iostream.seek(4)
-        data = riff.ChunkData.streamfrom(iostream, size=8)
-        data.close()
-        with self.assertRaises(ValueError) as ctx:
-            iter(data)
-        self.assertEqual('io stream closed', str(ctx.exception))
 
 
 class Test_ChunkData_next(unittest.TestCase):
