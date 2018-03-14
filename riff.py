@@ -103,7 +103,7 @@ class Chunk:
         return cls(header, data, padbyte)
 
     @classmethod
-    def readfrom(cls, iostream, stream=False):
+    def _readfrom(cls, iostream, stream):
         header = ChunkHeader.readfrom(iostream)
         if not stream:
             buffer = iostream.read(header.size)
@@ -114,6 +114,14 @@ class Chunk:
         padded = header.size % 2 != 0
         padbyte = iostream.read(cls.PAD_SIZE) if padded else b''
         return cls(header, data, padbyte)
+
+    @classmethod
+    def readfrom(cls, iostream):
+        return cls._readfrom(iostream, stream=False)
+
+    @classmethod
+    def streamfrom(cls, iostream):
+        return cls._readfrom(iostream, stream=True)
 
     def __repr__(self):
         return "riff.Chunk(id='{}', size={})".format(self.id, self.size)
@@ -145,8 +153,9 @@ class RiffChunk:
         self._subchunks = subchunks
 
     @classmethod
-    def readfrom(cls, iostream, stream=False):
-        chunk = Chunk.readfrom(iostream, stream)
+    def _readfrom(cls, iostream, stream):
+        readchunk = Chunk.streamfrom if stream else Chunk.readfrom
+        chunk = readchunk(iostream)
         if chunk.id != cls.ID:
             raise Error("unexpected chunk id '{}'".format(chunk.id))
         buffer = chunk.data.read(cls.FORMAT_STRUCT.size)
@@ -159,17 +168,21 @@ class RiffChunk:
             raise Error('riff chunk format not ascii-decodable') from error
         subchunks = []
         while chunk.data.tell() < chunk.data.size:
-            subchunk = Chunk.readfrom(chunk.data, stream)
+            subchunk = readchunk(chunk.data)
             subchunks.append(subchunk)
         return cls(chunk.size, format, subchunks)
+
+    @classmethod
+    def readfrom(cls, iostream):
+        return cls._readfrom(iostream, stream=False)
+
+    @classmethod
+    def streamfrom(cls, iostream):
+        return cls._readfrom(iostream, stream=True)
 
     @property
     def format(self):
         return self._format
-
-    @property
-    def id(self):
-        return self.ID
 
     @property
     def size(self):
@@ -178,3 +191,68 @@ class RiffChunk:
     def subchunks(self):
         for subchunk in self._subchunks:
             yield subchunk
+
+
+class WaveFormatChunk:
+    ID = 'fmt '
+
+    def __init__(self, channels, samplerate, samplebits):
+        self._channels = channels
+        self._samplerate = samplerate
+        self._samplebits = samplebits
+
+    @classmethod
+    def fromchunk(cls, chunk):
+        if chunk.id != cls.ID:
+            raise Error("chunk id '{}' != '{}'".format(chunk.id, cls.ID))
+        
+
+    @property
+    def blockalign(self):
+        return self.channels * self.samplebits / 8
+
+    @property
+    def byterate(self):
+        return self.samplerate * self.blockalign
+
+    @property
+    def channels(self):
+        return self._channels
+
+    @property
+    def samplebits(self):
+        return self._samplebits
+
+    @property
+    def samplerate(self):
+        return self._samplerate
+
+
+class WaveChunk:
+    FORMAT = 'WAVE'
+
+    def __init__(self, size):
+        self._size = size
+
+    @classmethod
+    def readfrom(cls, iostream):
+        riffchunk = RiffChunk.readfrom(iostream)
+        if riffchunk.format != cls.FORMAT:
+            raise Error("'{}' != '{}'".format(riffchunk.format, cls.FORMAT))
+        try:
+            formatchunk = next(
+                subchunk
+                for subchunk in riffchunk.subchunks()
+                if subchunk.id == WaveFormatChunk.ID
+            )
+        except StopIteration:
+            raise Error('no wave format subchunk found')
+
+
+    @property
+    def id(self):
+        return self.ID
+
+    @property
+    def size(self):
+        return self._size
