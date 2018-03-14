@@ -201,12 +201,6 @@ class WaveFormatChunk:
         self._samplerate = samplerate
         self._samplebits = samplebits
 
-    @classmethod
-    def fromchunk(cls, chunk):
-        if chunk.id != cls.ID:
-            raise Error("chunk id '{}' != '{}'".format(chunk.id, cls.ID))
-        
-
     @property
     def blockalign(self):
         return self.channels * self.samplebits / 8
@@ -247,7 +241,6 @@ class WaveChunk:
             )
         except StopIteration:
             raise Error('no wave format subchunk found')
-
 
     @property
     def id(self):
