@@ -401,9 +401,9 @@ class Test_RiffChunk_readfrom(unittest.TestCase):
 class Test_RiffChunk_subchunks(unittest.TestCase):
     def test_can_iterate_subchunks(self):
         iostream = io.BytesIO(
-            b'RIFF\x1c\x00\x00\x00MOCK'
-            + b'CNKA\x04\x00\x00\x00AAAA'
-            + b'CNKB\x04\x00\x00\x00BBBB'
+            b'RIFF\x1c\x00\x00\x00MOCK' +
+            b'CNKA\x04\x00\x00\x00AAAA' +
+            b'CNKB\x04\x00\x00\x00BBBB'
         )
         riffchunk = riff.RiffChunk.readfrom(iostream)
         for subchunk in riffchunk.subchunks():
